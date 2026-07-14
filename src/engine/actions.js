@@ -120,7 +120,7 @@ export function payConsumerDebt(state,kind,amount){const ch=state.character;retu
 export function updateFinancialGoal(state,key,amount){const ch=state.character;return setFinancialGoal(ch,COUNTRY_BY_ID[ch.countryId],key,amount);}
 export function updateTaxCompliance(state,value){const ch=state.character;return setTaxCompliance(ch,COUNTRY_BY_ID[ch.countryId],value);}
 export function updateTaxFilingChoice(state,value){const ch=state.character;return setTaxFilingChoice(ch,COUNTRY_BY_ID[ch.countryId],value);}
-export function filePersonalBankruptcy(state){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId],eligible=(ch.debts.personalLoan||0)+(ch.debts.creditCard||0)+(ch.debts.business||0)+(ch.debts.tax||0);if(ch.age<18||eligible<medianWage(c)*.5||ch.judicial?.activeCase)return false;ch.judicial.bankruptcyDue=eligible;return true;}
+export function filePersonalBankruptcy(state){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId],eligible=(ch.debts.personalLoan||0)+(ch.debts.creditCard||0)+(ch.debts.business||0)+(ch.debts.tax||0);if(ch.age<18||eligible<medianWage(c)*.5||ch.judicial?.activeCase||ch.judicial?.investigation||ch.judicial?.warrant)return false;ch.judicial.bankruptcyDue=eligible;return true;}
 
 export function quitJob(state) {
   const ch = state.character, country = COUNTRY_BY_ID[ch.countryId];

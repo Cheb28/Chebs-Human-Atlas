@@ -29,6 +29,7 @@ const OFFENCES = {
 export function initJudicial() {
   return {
     status: 'free', plannedCrime: null, activeCase: null, cases: [], records: [],
+    investigation: null, warrant: null, extraditions: [],
     prison: null, parole: null, barredUntilAge: 0, finesOwed: 0,
     victimLosses: 0, convictions: 0,
   };
@@ -39,6 +40,7 @@ export function ensureJudicial(ch) {
   ch.judicial.cases ||= [];
   ch.judicial.records ||= [];
   ch.judicial.drivingOffences ||= 0;
+  ch.judicial.extraditions ||= [];
   return ch.judicial;
 }
 
@@ -55,7 +57,7 @@ export function lawProfile(country) {
 
 export function planCrime(ch, crimeId) {
   const j = ensureJudicial(ch);
-  if (!CRIMES[crimeId] || ch.age < 14 || j.status === 'prison' || j.activeCase || j.plannedCrime) return false;
+  if (!CRIMES[crimeId] || ch.age < 14 || j.status === 'prison' || j.activeCase || j.investigation || j.warrant || j.plannedCrime) return false;
   j.plannedCrime = crimeId;
   return true;
 }
@@ -91,6 +93,32 @@ function optionsForCase(country) {
   if (country.lawTier === 'weak') options.push({ id: 'bribe', label: 'Attempt a bribe', desc: 'Costs one local median income; usually works but can backfire.' });
   return options;
 }
+
+export function openInvestigation(ch, country, offence, { guilty=true, evidence, source='event' }={}) {
+  const j=ensureJudicial(ch),rule=OFFENCES[offence]||OFFENCES.false_accusation;
+  if(j.investigation||j.activeCase||j.warrant)return null;
+  j.investigation={id:`${ch.age}-I${j.cases.length+1}`,offence,label:rule.label,guilty,evidence:evidence??rule.evidence,
+    source,severity:rule.severity,fineMultiple:rule.fine,prisonYears:rule.prison,originCountryId:country.id,originCountryName:country.name,
+    openedAge:ch.age,yearsRemaining:1,exitRestricted:rule.severity>=3||(rule.severity>=2&&country.lawTier==='strong')};
+  j.status='under_investigation';
+  return j.investigation;
+}
+
+const nonExtraditable=new Set(['activism','prohibited_alcohol','sex_work','purchase_sex','false_accusation']);
+function warrantFromMatter(ch,matter){const j=ensureJudicial(ch),extraditable=(matter.severity||0)>=2&&!nonExtraditable.has(matter.offence);j.warrant={
+  id:`W-${matter.id}`,originCountryId:matter.originCountryId||ch.countryId,offence:matter.offence,label:matter.label,
+  guilty:matter.guilty,evidence:matter.evidence,fineMultiple:matter.fineMultiple,prisonYears:matter.prisonYears,
+  severity:matter.severity,issuedAge:ch.age,extraditable,source:matter.source,
+};j.status='fugitive';return j.warrant;}
+
+export function fleePendingCase(ch){const j=ensureJudicial(ch),matter=j.activeCase;if(!matter||matter.kind!=='criminal')return false;
+  matter.status='fugitive';matter.originCountryId||=ch.countryId;j.cases.push({...matter});warrantFromMatter(ch,matter);j.activeCase=null;
+  ch.pendingDecisions=(ch.pendingDecisions||[]).filter(d=>d.caseId!==matter.id);return true;}
+
+export function restoreExtraditedCase(ch,country){const j=ensureJudicial(ch),w=j.warrant;if(!w)return null;const legalCase={...w,id:`${ch.age}-X${j.cases.length+1}`,kind:'criminal',status:'charged',openedAge:ch.age,source:'extradition'};
+  delete legalCase.originCountryId;delete legalCase.extraditable;delete legalCase.issuedAge;j.warrant=null;j.activeCase=legalCase;j.status='awaiting_trial';
+  const decision={type:'legalCase',caseId:legalCase.id,default:'public',choice:null,prompt:`You were returned to face a charge of ${legalCase.label.toLowerCase()}. Choose how to respond.`,options:optionsForCase(country)};
+  ch.pendingDecisions||=[];ch.pendingDecisions.push(decision);return decision;}
 
 export function openCriminalCase(ch, country, offence, { guilty = true, evidence, source = 'event' } = {}) {
   const j = ensureJudicial(ch);
@@ -301,13 +329,17 @@ export function resolveJudicialYear(ch, country, rng) {
     j.parole = null; j.status = 'free'; logs.push('Completed parole.');
   }
 
+  if(j.investigation){const inv=j.investigation;inv.yearsRemaining-=1;if(inv.yearsRemaining>0)return{logs,decisions};j.investigation=null;
+    if(rng.chance(inv.evidence)){if(ch.countryId!==inv.originCountryId){warrantFromMatter(ch,inv);j.cases.push({...inv,status:'charged_in_absence',resolvedAge:ch.age});logs.push(`Authorities in ${inv.originCountryName||'the origin country'} issued a warrant after you left during the investigation.`);}
+      else{const d=openCriminalCase(ch,country,inv.offence,{guilty:inv.guilty,evidence:inv.evidence,source:inv.source});if(d)decisions.push(d);logs.push(`The investigation produced a charge of ${inv.label.toLowerCase()}.`);}}
+    else{j.status='free';j.cases.push({...inv,status:'closed_without_charge',resolvedAge:ch.age});logs.push(`The investigation into ${inv.label.toLowerCase()} closed without a charge.`);}return{logs,decisions};}
+
   if (j.plannedCrime) {
     const crimeId = j.plannedCrime, crime = CRIMES[crimeId]; j.plannedCrime = null;
     const payout = medianWage(country) * crime.payout;
     if (rng.chance(crime.catch[country.lawTier] ?? crime.catch.medium)) {
-      const d = openCriminalCase(ch, country, crimeId, { guilty: true, evidence: crime.evidence, source: 'deliberate' });
-      if (d) decisions.push(d);
-      logs.push(`Authorities caught you attempting ${crime.label.toLowerCase()}.`);
+      openInvestigation(ch, country, crimeId, { guilty: true, evidence: crime.evidence, source: 'deliberate' });
+      logs.push(`Authorities opened an investigation after detecting attempted ${crime.label.toLowerCase()}.`);
     } else {
       ch.money.bank += payout;
       logs.push(`${crime.label} succeeded and brought in ${Math.round(payout).toLocaleString()} in illegal proceeds.`);

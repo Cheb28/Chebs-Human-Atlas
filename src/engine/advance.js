@@ -55,7 +55,11 @@ function baseHazard(country, age) {
   // Expanded named conditions now contribute their own mortality burden, so the
   // age-only baseline is lower than the earlier generic-health calibration.
   const A = (B / Math.exp(B * le)) * 0.10;
-  return A * Math.exp(B * age);
+  // Country health events already add unequal illness burdens. A small calibration
+  // table prevents exceptionally low modeled disease exposure from pushing a
+  // typical life far beyond the source life-expectancy figure.
+  const calibration={Germany:2.15,Japan:2.10}[country.name]||1;
+  return A * Math.exp(B * age)*calibration;
 }
 function mortalityProbability(ch, country, ageAtStart = Math.max(0, ch.age - 1)) {
   const age = ch.age;

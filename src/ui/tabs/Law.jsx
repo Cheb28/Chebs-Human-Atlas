@@ -16,12 +16,12 @@ export default function Law({ state, refresh }) {
   const beneficiaries = eligibleBeneficiaries(ch);
   const total = beneficiaries.reduce((sum, b) => sum + (Number(ch.will?.shares?.[b.id]) || 0), 0);
   const activeRecords = judicial.records.filter(r => !r.overturned && r.expiresAge > ch.age);
-  const unavailable = ch.age < 14 || judicial.status === 'prison' || !!judicial.activeCase;
+  const unavailable = ch.age < 14 || judicial.status === 'prison' || !!judicial.activeCase || !!judicial.investigation || !!judicial.warrant;
   const [legalName,setLegalName]=useState(ch.identity?.currentLegalName||ch.name||'');
   const [identityMessage,setIdentityMessage]=useState('');
   const changeProfile=nameChangeProfile(country,ch);
   const bankruptcyDebt=(ch.debts?.business||0)+(ch.debts?.personalLoan||0)+(ch.debts?.creditCard||0)+(ch.debts?.tax||0);
-  const canFileBankruptcy=ch.age>=18&&bankruptcyDebt>=country.gdpPerCapita*.25&&!judicial.activeCase;
+  const canFileBankruptcy=ch.age>=18&&bankruptcyDebt>=country.gdpPerCapita*.25&&!judicial.activeCase&&!judicial.investigation&&!judicial.warrant;
 
   return (
     <div className="grid cols-2">
@@ -38,6 +38,8 @@ export default function Law({ state, refresh }) {
         <h3>Your Legal Status</h3>
         <div className="kv"><span className="k">Status</span><span className="v">{titleCase(judicial.status.replaceAll('_', ' '))}</span></div>
         {judicial.activeCase && <div className="kv"><span className="k">Active case</span><span className="v">{judicial.activeCase.label || titleCase(judicial.activeCase.civilKind)}</span></div>}
+        {judicial.investigation&&<><div className="kv"><span className="k">Investigation</span><span className="v">{judicial.investigation.label}</span></div><div className="kv"><span className="k">Travel restriction</span><span className="v">{judicial.investigation.exitRestricted?'Court-restricted':'No formal restriction'}</span></div></>}
+        {judicial.warrant&&<><div className="kv"><span className="k">Outstanding warrant</span><span className="v">{judicial.warrant.label}</span></div><div className="kv"><span className="k">International return risk</span><span className="v">{judicial.warrant.extraditable?'Extradition may be requested':'Not treated as an extraditable offence'}</span></div></>}
         {judicial.prison && <>
           <div className="kv"><span className="k">Sentence remaining</span><span className="v">{judicial.prison.remaining} year(s)</span></div>
           <div className="kv"><span className="k">Parole eligibility</span><span className="v">after {judicial.prison.paroleEligibleAfter} served</span></div>
@@ -77,7 +79,7 @@ export default function Law({ state, refresh }) {
           <span className="nm">{crime.label}{judicial.plannedCrime === id ? ' ✓ planned' : ''}</span>
           <span className="rg">possible proceeds: ~{money(crime.payout * country.gdpPerCapita * 0.55)}</span>
         </button>)}
-        {unavailable && <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>Crime planning is unavailable while underage, imprisoned, or already before a court.</div>}
+        {unavailable && <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>Crime planning is unavailable while underage, imprisoned, under investigation, wanted, or already before a court.</div>}
       </div>
 
       <div className="panel">

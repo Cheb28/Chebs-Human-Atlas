@@ -37,7 +37,7 @@ for(let i=0;i<150;i++){
     const s=adultLife(country,7100+i);
     planCrime(s.character,'fraud');
     resolveJudicialYear(s.character,country,makeRng(9000+i));
-    if(s.character.judicial.activeCase){if(key==='strong')strongCaught++;else weakCaught++;}
+    if(s.character.judicial.investigation||s.character.judicial.activeCase){if(key==='strong')strongCaught++;else weakCaught++;}
   }
 }
 assert(strongCaught>weakCaught+35,`expected stronger detection contrast, got ${strongCaught}/${weakCaught}`);

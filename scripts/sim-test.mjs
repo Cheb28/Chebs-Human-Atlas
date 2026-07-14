@@ -1,6 +1,7 @@
 // Engine smoke + calibration test (run: node scripts/sim-test.mjs)
 import { newGame, stepYear } from '../src/engine/game.js';
 import { COUNTRY_BY_NAME } from '../src/engine/countries.js';
+import assert from 'node:assert/strict';
 
 function runLife(opts) {
   const state = newGame(opts);
@@ -24,6 +25,7 @@ for (const name of ['United States', 'Germany', 'Nigeria', 'South Korea', 'Monac
   const diff = med - le;
   const flag = Math.abs(diff) <= 8 ? 'ok ' : 'XX ';
   console.log(`  ${flag} ${name.padEnd(14)} median death ${String(med).padStart(3)}  LE ${le}  (diff ${diff.toFixed(1)})`);
+  assert(Math.abs(diff)<=8,`${name} median death age drifted too far from modeled life expectancy`);
 }
 
 console.log('\n=== Born-anywhere skew (200 rolls, top regions) ===');

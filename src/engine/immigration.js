@@ -4,6 +4,7 @@ import { destinationLanguageLevel, ensureLanguages, naturalizationLanguageRequir
 import { applyMigrationExchange } from './financialSystems.js';
 import { ensureExperience, sectorYears, vocationalYears } from './experience.js';
 import { ensureTransportation, passportRequirement } from './transportation.js';
+import { fleePendingCase, restoreExtraditedCase } from './judicial.js';
 
 const BLOCS = [
   { id: 'eu-eea', label: 'EU / EEA / Switzerland', members: ['Austria','Belgium','Bulgaria','Croatia','Cyprus','Czechia','Denmark','Estonia','Finland','France','Germany','Greece','Hungary','Iceland','Ireland','Italy','Latvia','Liechtenstein','Lithuania','Luxembourg','Malta','Netherlands','Norway','Poland','Portugal','Romania','Slovakia','Slovenia','Spain','Sweden','Switzerland'] },
@@ -137,20 +138,23 @@ function smugglingMultiplier(from, target) {
   return Math.min(4, 1 + distance + Math.max(0, target.incomeTier - from.incomeTier) * 0.55);
 }
 
-function blockedReason(ch, target) {
+export function departureBlock(ch, target, routeId=null, {ignorePending=false}={}) {
   if (ch.age < 18) return 'You must be 18 unless moving with family.';
   if (['serving','career'].includes(ch.military?.status)) return 'You cannot emigrate while serving in the military.';
   if (ch.employmentStatus === 'prison') return 'You cannot emigrate while imprisoned.';
-  if (ch.judicial?.activeCase) return 'You cannot emigrate while a criminal case is awaiting resolution.';
+  if (ch.judicial?.status==='parole') return 'You cannot emigrate while on parole.';
+  if (ch.judicial?.activeCase?.kind==='criminal'&&routeId!=='irregular') return 'A pending criminal charge blocks legal departure; fleeing irregularly would create fugitive status.';
+  if (ch.judicial?.investigation?.exitRestricted&&routeId!=='irregular') return 'A court-ordered exit restriction blocks legal departure during this serious investigation.';
+  if (ch.judicial?.warrant&&routeId!=='irregular') return 'An outstanding warrant blocks legal travel.';
   if (target.id === ch.countryId) return 'You already live here.';
-  if (ensureImmigration(ch).pending) return 'Another immigration application is pending.';
+  if (!ignorePending&&ensureImmigration(ch).pending) return 'Another immigration application is pending.';
   return null;
 }
 
 export function immigrationOptions(ch, state, target) {
   ensureImmigration(ch);
   const from = COUNTRY_BY_ID[ch.countryId];
-  const block = blockedReason(ch, target);
+  const block = departureBlock(ch, target, 'irregular');
   const funds = liquidFunds(ch);
   const treaty = treatyFor(ch, target);
   const residenceAgreement=residenceAgreementFor(ch,target);
@@ -199,7 +203,8 @@ export function immigrationOptions(ch, state, target) {
       reason:'Always possible if you can pay: 2% death risk, 10% robbery risk, informal work only, and yearly deportation risk.' },
   ];
   for (const r of routes) {
-    if (block) { r.eligible = false; r.reason = block; }
+    const routeBlock=block||departureBlock(ch,target,r.id);
+    if (routeBlock) { r.eligible = false; r.reason = routeBlock; }
     else if (r.eligible && r.id !== 'golden' && funds < r.cost) { r.eligible = false; r.reason = `Insufficient liquid funds; requires ${Math.round(r.cost).toLocaleString()}.`; }
     else if (r.eligible && r.id === 'golden' && convertedPortable < r.cost) { r.eligible = false; r.reason = 'Insufficient total portable wealth after PPP conversion.'; }
     if ((ch.immigration.barredUntilAge||0)>ch.age&&r.id!=='irregular') {
@@ -273,6 +278,7 @@ export function submitMigration(state,targetId,routeId){
   if(!target)return {ok:false,reason:'Unknown destination.'};
   const route=immigrationOptions(ch,state,target).find(r=>r.id===routeId);
   if(!route?.eligible)return {ok:false,reason:route?.reason||'Not eligible.'};
+  if(routeId==='irregular'&&ch.judicial?.activeCase?.kind==='criminal')fleePendingCase(ch);
   if(route.immediate){
     const factor=moveCharacter(ch,target,routeId,ch.age,{cost:route.cost});
     return {ok:true,immediate:true,log:`Moved to ${target.name} through ${route.label}. PPP conversion ×${factor.toFixed(2)}.`};
@@ -297,6 +303,10 @@ export function resolveImmigration(ch,state,rng){
   let died=false;
   if(im.residence.countryId===ch.countryId&&im.residence.status!=='citizen'&&im.residence.status!=='irregular'
       && im.residence.visa?.countsForResidency!==false)im.residence.years+=1;
+  if(im.pending){
+    const pendingTarget=COUNTRY_BY_ID[im.pending.targetId],restriction=departureBlock(ch,pendingTarget,im.pending.route,{ignorePending:true});
+    if(restriction){logs.push(`Your migration application was cancelled: ${restriction}`);im.pending=null;}
+  }
   if(im.pending){
     im.pending.yearsRemaining-=1;
     if(im.pending.yearsRemaining<=0){
@@ -327,6 +337,11 @@ export function resolveImmigration(ch,state,rng){
     const {target,factor}=deport(ch,ch.age);logs.push(`Immigration authorities deported you to ${target.name}. PPP conversion ×${factor.toFixed(2)}.`);
     }
   }
+  let warrant=ch.judicial?.warrant;
+  if(!died&&warrant&&warrant.originCountryId===ch.countryId){const origin=COUNTRY_BY_ID[warrant.originCountryId];restoreExtraditedCase(ch,origin);logs.push(`Authorities arrested you on return to ${origin.name} because of the outstanding warrant.`);warrant=null;}
+  if(!died&&warrant?.extraditable&&warrant.originCountryId!==ch.countryId){const origin=COUNTRY_BY_ID[warrant.originCountryId],here=COUNTRY_BY_ID[ch.countryId],eu=BLOCS.find(x=>x.id==='eu-eea'),sameEu=eu.members.includes(origin?.name)&&eu.members.includes(here?.name);
+    let chance=sameEu?.22:here?.lawTier==='strong'?.08:here?.lawTier==='medium'?.04:.015;if((ch.immigration.citizenships||[]).includes(here?.id)&&!sameEu)chance*=.45;
+    if(origin&&rng.chance(chance)){const factor=moveCharacter(ch,origin,'extradition',ch.age,{});restoreExtraditedCase(ch,origin);ch.judicial.extraditions.push({age:ch.age,fromId:here.id,toId:origin.id,offence:warrant.label});logs.push(`Authorities arrested and returned you to ${origin.name} through an extradition or surrender process. PPP conversion ×${factor.toFixed(2)}.`);}}
   return {logs,died};
 }
 
@@ -335,7 +350,7 @@ export function naturalizationStatus(ch){
   const required=country.citizenship?.naturalizationYears||8;
   const language=naturalizationLanguageRequirement(country),languageLevel=destinationLanguageLevel(ch,country);
   const languageMet=!language.required||languageLevel>=language.required;
-  const criminalBar=(ch.judicial?.barredUntilAge||0)>ch.age;
+  const criminalBar=(ch.judicial?.barredUntilAge||0)>ch.age||!!ch.judicial?.warrant||ch.judicial?.activeCase?.kind==='criminal'||!!ch.judicial?.investigation;
   const eligible=im.residence.status!=='citizen'&&im.residence.status!=='irregular'&&im.residence.years>=required&&languageMet&&!criminalBar;
   return {eligible,years:im.residence.years,required,remaining:Math.max(0,required-im.residence.years),dualAllowed:!!country.citizenship?.dualAllowed,
     languageRequired:language.required,language:language.language,languageLevel,languageMet,criminalBar};

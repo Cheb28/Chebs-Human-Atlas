@@ -341,6 +341,15 @@ availability, vehicle finance and costs, insurance and DUI consequences, utiliti
 passport-gated migration, European regional identity-card travel, transportation careers, and all
 new mini-tab organization have automated coverage.
 
+### Pre-10.4.1D Stabilization Audit
+
+**Status: complete.** Added broad full-life and every-country stress coverage, fixed migration during
+pending criminal proceedings, separated civil cases from criminal exit restrictions, added
+investigations, warrants, fugitive flight and simplified extradition/surrender, restored cases on
+return, enforced passport restrictions, and corrected Germany/Japan mortality calibration. Detailed
+critical, major, minor, and deliberately deferred findings are recorded in
+`STABILIZATION_AUDIT_10_4_1D.md`.
+
 ### Phase 10.4.2 — Christianity
 
 **Status: planned.** Add Catholic, Orthodox, Protestant, and locally important Christian practice,
