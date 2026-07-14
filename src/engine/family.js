@@ -7,6 +7,7 @@ import { applyMarriageName, displayName, generateRelatedName, hydrateNames } fro
 import { ensureMemberEconomy, resolveHouseholdEconomy } from './household.js';
 import { makeRng } from './rng.js';
 import { initReligionState } from './religion.js';
+import { initLifeState, learningAptitudeFactor, socialConfidenceFactor } from './lifeState.js';
 
 function clamp(v) { return Math.max(0, Math.min(100, v)); }
 function pickDistribution(rng, list, fallback) { return list?.length ? rng.weighted(list, x => x.pct || 1).name : fallback; }
@@ -44,6 +45,7 @@ function makePartner(ch, country, rng) {
   };
   generateRelatedName(rng,country,partner,ch,{familyName:''});
   partner.religionState = initReligionState(partner);
+  partner.lifeState = initLifeState({...partner,age:personAge(ch,partner)},country,rng);
   partner.compatibility = compatibilityScore(ch, partner);
   return partner;
 }
@@ -84,12 +86,13 @@ function makeChild(ch, country, rng, origin = 'birth') {
     experience:initExperience(),educationPerformance:50,credentials:[],atHome:true,working:false,personalSavings:0,grandchildren:[],
   };
   child.religionState = initReligionState(child);
+  child.lifeState = initLifeState({...child,age:0},country,rng);
   generateRelatedName(rng,country,child,ch);ensureMemberEconomy(child,ch,country,rng);return child;
 }
 
 function resolveFriends(ch, country, rng, social, logs) {
   const friends = ch.social.friends;
-  if (ch.social.friendIntent && ch.age >= 6 && rng.chance(.35 + ch.stats.charisma / 300)) {
+  if (ch.social.friendIntent && ch.age >= 6 && rng.chance(.40 + socialConfidenceFactor(ch) * .16)) {
     const friend = { id:`friend-${ch.age}-${friends.length}`, relation:'Friend', alive:true, circle:'ordinary', sex:rng.chance(.5)?'male':'female', ageOffset:rng.int(-3,3), relationshipScore:55+rng.int(0,20), personality:traits(rng), yearsKnown:0, countryId:country.id };
     generateRelatedName(rng,country,friend,ch,{familyName:''});friends.push(friend); logs.push(`You became friends with ${displayName(friend)}.`);
   }
@@ -114,7 +117,7 @@ function resolveChildDevelopment(ch, p, country, rng, housing, logs) {
   if (p.relationshipScore != null && !(ch.selectedActivities||[]).includes('family')) p.relationshipScore=clamp(p.relationshipScore-2);
   if (age === 6) { p.educationOutcome='primary school'; logs.push(`${p.name||`Child ${p.childNumber}`} started primary school.`); }
   if (age >= 6 && age < 18) {
-    ensureExperience(p);p.educationPerformance=clamp((p.educationPerformance??50)+(country.educationTier-2)*.8+(p.stats.intelligence-50)*.02);
+    ensureExperience(p);p.educationPerformance=clamp((p.educationPerformance??50)+(country.educationTier-2)*.8+(learningAptitudeFactor(p)-1)*2);
     if (rng.chance(.012 * (4-country.incomeTier))) { p.healthConditions.push('childhood chronic condition'); p.stats.health=clamp(p.stats.health-8); logs.push(`${p.name||`Child ${p.childNumber}`} developed a chronic health condition.`); }
   }
   if (age === 18) {
@@ -127,12 +130,12 @@ function resolveChildDevelopment(ch, p, country, rng, housing, logs) {
     if (age>=20 && p.partnerStatus==='single' && rng.chance(.12)) {
       const detail=collateralRng(ch,p);p.partnerStatus='partnered';const partnerAge=Math.max(18,age+detail.int(-4,4));
       p.partner={id:`partner-${p.id}`,relation:'Partner',alive:true,sex:detail.chance(.82)?(p.sex==='male'?'female':'male'):p.sex,ageOffset:ch.age-partnerAge,countryId:country.id,residenceCountryId:country.id,citizenships:[country.id],relationshipScore:65,personality:traits(detail),religion:detail.chance(.75)?(p.religion||ch.religion):pickDistribution(detail,country.religions,ch.religion)};
-      p.partner.religionState=initReligionState(p.partner);generateRelatedName(detail,country,p.partner,p,{familyName:''});logs.push(`${p.name||`Child ${p.childNumber}`} entered a serious relationship with ${displayName(p.partner)}.`);
+      p.partner.religionState=initReligionState(p.partner);p.partner.lifeState=initLifeState({...p.partner,age:partnerAge},country,detail);generateRelatedName(detail,country,p.partner,p,{familyName:''});logs.push(`${p.name||`Child ${p.childNumber}`} entered a serious relationship with ${displayName(p.partner)}.`);
     }
     if (age>=22 && p.partnerStatus==='partnered' && rng.chance(.12)) { p.partnerStatus='married';p.spouse={...p.partner,relation:'Spouse'};p.partner=null;logs.push(`${p.name||`Child ${p.childNumber}`} married ${displayName(p.spouse)}.`); }
     if (age>=22 && ['partnered','married'].includes(p.partnerStatus) && rng.chance(Math.min(.18,(country.fertility||2)/18))) {
       const detail=collateralRng(ch,p),parentReligion=p.religion||ch.religion,partnerReligion=p.spouse?.religion||p.partner?.religion,parentAgree=!partnerReligion||partnerReligion===parentReligion,grandchild={id:`grandchild-${p.id}-${(p.grandchildren||[]).length+1}`,relation:'Grandchild',alive:true,sex:rng.chance(.5)?'male':'female',ageOffset:ch.age,countryId:country.id,residenceCountryId:country.id,citizenships:[country.id],relationshipScore:65,religion:detail.chance(.8)?parentReligion:(partnerReligion||parentReligion),religiousUpbringing:{publicReligion:parentReligion,guardianLed:true,parentsAgree:parentAgree},stats:{health:65+detail.int(-8,8),happiness:58+detail.int(-6,6),intelligence:50+detail.int(-9,9),fitness:50+detail.int(-8,8),charisma:48+detail.int(-8,8)},experience:initExperience(),educationPerformance:50,credentials:[],healthConditions:[],personalSavings:0,grandchildren:[]};
-      grandchild.religionState=initReligionState(grandchild);generateRelatedName(detail,country,grandchild,ch,{familyName:p.identity?.familyName});p.grandchildren||=[];p.grandchildren.push(grandchild);p.ownChildren=p.grandchildren.length;logs.push(`${displayName(p)} had ${displayName(grandchild)}; you became a grandparent.`);
+      grandchild.religionState=initReligionState(grandchild);grandchild.lifeState=initLifeState({...grandchild,age:0},country,detail);generateRelatedName(detail,country,grandchild,ch,{familyName:p.identity?.familyName});p.grandchildren||=[];p.grandchildren.push(grandchild);p.ownChildren=p.grandchildren.length;logs.push(`${displayName(p)} had ${displayName(grandchild)}; you became a grandparent.`);
     }
     const moveChance=Math.max(0,.04+(age-20)*.025+(p.working?.08:0)+(p.personalSavings>medianWage(country)*.6?.08:0)+housing.adultChildContributionRate*.2);
     if(p.atHome!==false&&rng.chance(Math.min(.65,moveChance))){p.atHome=false;logs.push(`${p.name||`Child ${p.childNumber}`} moved out of the household.`);}
@@ -145,13 +148,13 @@ function resolveCollateralDevelopment(ch,p,country,rng,logs){
   if(!p.partnerStatus&&age>=20&&rng.chance(.07)){
     p.partnerStatus='partnered';const partnerAge=Math.max(18,age+rng.int(-5,5));
     p.partner={id:`partner-${p.id}`,relation:'Partner',alive:true,sex:rng.chance(.82)?(p.sex==='male'?'female':'male'):p.sex,ageOffset:ch.age-partnerAge,countryId:country.id,residenceCountryId:country.id,citizenships:[country.id],relationshipScore:62,personality:traits(rng),religion:rng.chance(.75)?(p.religion||ch.religion):pickDistribution(rng,country.religions,ch.religion)};
-    p.partner.religionState=initReligionState(p.partner);generateRelatedName(rng,country,p.partner,p,{familyName:''});logs.push(`${displayName(p)} entered a serious relationship with ${displayName(p.partner)}.`);
+    p.partner.religionState=initReligionState(p.partner);p.partner.lifeState=initLifeState({...p.partner,age:partnerAge},country,rng);generateRelatedName(rng,country,p.partner,p,{familyName:''});logs.push(`${displayName(p)} entered a serious relationship with ${displayName(p.partner)}.`);
   }
   if(p.partnerStatus==='partnered'&&age>=22&&rng.chance(.1)){p.partnerStatus='married';p.spouse={...p.partner,relation:'Spouse'};p.partner=null;logs.push(`${displayName(p)} married ${displayName(p.spouse)}.`);}
   if(['partnered','married'].includes(p.partnerStatus)&&age>=22&&age<=48&&p.children.length<4&&rng.chance(Math.min(.12,(country.fertility||2)/24))){
     const relation=p.relation==='Sibling'?'Niece/Nephew':['Aunt','Uncle','Aunt/Uncle'].includes(p.relation)?'Cousin':'Relative';
     const child={id:`relative-child-${p.id}-${p.children.length+1}`,relation,alive:true,sex:rng.chance(.5)?'male':'female',ageOffset:ch.age,countryId:country.id,residenceCountryId:country.id,citizenships:[country.id],relationshipScore:55,religion:p.religion||ch.religion,religiousUpbringing:{publicReligion:p.religion||ch.religion,guardianLed:true,parentsAgree:!p.partner||p.partner.religion===(p.religion||ch.religion)},stats:{health:68+rng.int(-8,8),happiness:58+rng.int(-7,7),intelligence:50+rng.int(-9,9),fitness:50+rng.int(-8,8),charisma:48+rng.int(-8,8)},experience:initExperience(),educationPerformance:50,credentials:[],healthConditions:[],personalSavings:0,children:[]};
-    child.religionState=initReligionState(child);generateRelatedName(rng,country,child,ch,{familyName:p.identity?.familyName});p.children.push(child);logs.push(`${displayName(p)} had ${displayName(child)}, adding a ${relation.toLowerCase()} to your family tree.`);
+    child.religionState=initReligionState(child);child.lifeState=initLifeState({...child,age:0},country,rng);generateRelatedName(rng,country,child,ch,{familyName:p.identity?.familyName});p.children.push(child);logs.push(`${displayName(p)} had ${displayName(child)}, adding a ${relation.toLowerCase()} to your family tree.`);
   }
   for(const child of p.children){const childAge=personAge(ch,child);if(child.alive&&childAge>50&&rng.chance(Math.min(.3,.002*Math.exp(.075*(childAge-50))))){child.alive=false;logs.push(`${displayName(child)} died at age ${childAge}.`);}}
 }
@@ -210,7 +213,7 @@ export function resolveFamily(ch,country,rng){
     if(p.estranged&&ch.familyPlans.reconciliationId===p.id){if(rng.chance(.35+(p.relationshipScore||0)/200)){p.estranged=false;p.relationshipScore=40;logs.push(`You reconciled with your ${p.relation.toLowerCase()}.`);}else logs.push(`Your attempt at reconciliation was not accepted.`);ch.familyPlans.reconciliationId=null;}
   }
 
-  if(!ch.partner&&!ch.spouse&&ch.datingIntent&&ch.age>=16&&rng.chance(.18+ch.stats.charisma/500)){
+  if(!ch.partner&&!ch.spouse&&ch.datingIntent&&ch.age>=16&&rng.chance(.20+socialConfidenceFactor(ch)*.10)){
     const candidate=makePartner(ch,country,rng),law=relationshipLawProfile(country);
     if(isSameSexCouple(ch,candidate)&&law.status==='criminalized'&&rng.chance(law.safetyRisk)){logs.push('Legal and safety risks prevented a potential same-sex relationship from developing.');}
     else{ch.partner=candidate;ch.relationshipStatus='dating';logs.push(`You began dating ${displayName(candidate)}; compatibility is ${Math.round(candidate.compatibility)}/100.`);}

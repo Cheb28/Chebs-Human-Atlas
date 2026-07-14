@@ -262,8 +262,9 @@ deduction; succession history; and the absence of charitable will options before
 
 ### Phase 10.4.1 — Shared Religion Foundation
 
-**Status: complete.** Added a dedicated Religion tab with Overview, Observance, Beliefs, Charity,
-Conduct & Reconciliation, Community & Family, Career, and Legacy mini-tabs. Public identity, private
+**Status: complete.** Added a dedicated Religion tab. It now uses Overview, Beliefs,
+Practice & Reconciliation, Family & Community, Charity, and Legacy mini-tabs; religious careers are
+organized under Work. Public identity, private
 belief and identity, personal piety, outward observance, sect/denomination, Islamic fiqh school,
 community membership, and community standing are stored separately.
 
@@ -291,6 +292,21 @@ and reconciliation without declaring an afterlife outcome.
 **Verified:** persistent commitments, private/public divergence, recurring charity accounting,
 single-completion pilgrimage, interfaith civil/religious separation, conduct reconciliation,
 religious legacy, and preservation through family succession are covered by Phase 10.4.1 tests.
+
+### Phase 10.4.1A — Life System and Interface Reorganization
+
+**Status: complete.** Replaced the visible generic 0–100 vital bars with descriptive physical
+condition, daily function, emotional state, life satisfaction, stress, energy, and free-time states.
+Health now records height, weight, BMI, sleep, exercise, smoking pack-years, and alcohol exposure.
+BMI is presented as one screening measure rather than a complete definition of health.
+
+Activities now has Yearly Routine, Habits & Leisure, and Time & Lifestyle mini-tabs. Habit settings
+persist until changed and create real annual time, cost, enjoyment, and health effects. Work combines
+career, business, qualifications, history, military, and religious vocation. Places combines the
+current-country map and facts, country comparison, travel, visas, migration, and citizenship.
+Religion uses six focused mini-tabs. Unresolved decisions and a clickable Needs Attention list now
+live in Overview; resolved events remain in the Life Log. The top navigation is now Overview,
+Activities, Work, Education, Family, Health, Finances, Places, Religion, Law, and Settings.
 
 ### Phase 10.4.2 — Christianity
 

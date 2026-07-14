@@ -7,17 +7,15 @@ import { addCivicYear, addTrainingYear, ensureExperience } from './experience.js
 // Each activity: id, label, effect(ch, ctx) applying stat/skill deltas, and an
 // available(ch, country) gate. Effects are the tunable balancing table.
 export const ACTIVITIES = [
-  { id: 'studying', label: 'Studying & Reading', desc: '+Intelligence, +Academic performance, +Happiness',
-    effect: (ch) => { ch.education.performance=Math.min(100,(ch.education.performance??50)+(ch.education?.enrolled?4:2));addStat(ch,'intelligence',1);addStat(ch,'happiness',1); } },
-  { id: 'gym', label: 'Gym / Sports', desc: '+Fitness, +Health',
-    effect: (ch) => { addStat(ch, 'fitness', 3); addStat(ch, 'health', 1); },
+  { id: 'studying', label: 'Studying & Reading', desc: 'Academic performance, knowledge, and qualifications',
+    effect: (ch) => { ch.education.performance=Math.min(100,(ch.education.performance??50)+(ch.education?.enrolled?4:2));if(ch.lifeState?.aptitudes)ch.lifeState.aptitudes.knowledgeYears=(ch.lifeState.aptitudes.knowledgeYears||0)+1; } },
+  { id: 'gym', label: 'Gym / Sports', desc: 'Exercise, stamina, sleep, and long-term health',
+    effect: () => {},
     available: (ch) => ch.location.kind === 'rural' || ch.wealthIdx >= 1 || (ch.money.cash + ch.money.bank) > 0 },
-  { id: 'socializing', label: 'Socializing', desc: '+Charisma, +Happiness',
-    effect: (ch) => { addStat(ch, 'charisma', 2); addStat(ch, 'happiness', 2); } },
-  { id: 'activism', label: 'Political activism', desc: '+Civic involvement, +Charisma',
-    effect: (ch) => { addCivicYear(ch); addStat(ch, 'charisma', 1); } },
-  { id: 'religion', label: 'Religious practice', desc: '+Happiness, +Charisma',
-    effect: (ch) => { addStat(ch, 'happiness', 2); addStat(ch, 'charisma', 1); },
+  { id: 'socializing', label: 'Socializing', desc: 'Relationships, belonging, and social experience', effect: () => {} },
+  { id: 'activism', label: 'Political activism', desc: 'Civic experience, relationships, and possible legal exposure',
+    effect: (ch) => { addCivicYear(ch); } },
+  { id: 'religion', label: 'Religious practice', desc: 'Observance, community, and personal fulfillment', effect: () => {},
     available: (ch) => {
       const identity=ch.religionState?.privateIdentity||ch.religion;
       return identity && !/^(none|unaffiliated|atheist|agnostic)$/i.test(identity);
@@ -33,11 +31,9 @@ export const ACTIVITIES = [
   { id: 'business', label: 'Business study', desc: '+Business preparation',
     effect: (ch) => { addTrainingYear(ch,'business'); },
     available: (ch) => ch.age >= 14 },
-  { id: 'family', label: 'Family time', desc: '+relationships, +Happiness',
-    effect: (ch) => { addStat(ch, 'happiness', 1); },
+  { id: 'family', label: 'Family time', desc: 'Relationships, caregiving, and belonging', effect: () => {},
     available: (ch) => ch.spouse || (ch.family || []).some(p => p.relation === 'Child' && p.alive) },
-  { id: 'rest', label: 'Rest / leisure', desc: '+Happiness, +Health',
-    effect: (ch) => { addStat(ch, 'happiness', 2); addStat(ch, 'health', 1); } },
+  { id: 'rest', label: 'Rest / leisure', desc: 'Sleep, energy, stress recovery, and enjoyment', effect: () => {} },
 ];
 
 export const ACTIVITY_BY_ID = Object.fromEntries(ACTIVITIES.map(a => [a.id, a]));
@@ -96,10 +92,7 @@ export function applyActivities(ch, country, rng, selectedIds) {
   for (const id of chosen) ACTIVITY_BY_ID[id].effect(ch, ctx);
   // idle slots -> Rest at half effect
   const idle = budget - chosen.length;
-  for (let i = 0; i < idle; i++) { addStat(ch, 'happiness', 1); addStat(ch, 'health', 0.5); }
+  // Empty slots become unstructured rest; the life-condition system converts
+  // available time, sleep, and routines into energy and wellbeing.
   return ctx.sideIncome;
 }
-
-// ---- helpers ----
-function clamp(v, lo = 1, hi = 100) { return Math.max(lo, Math.min(hi, v)); }
-function addStat(ch, k, d) { ch.stats[k] = clamp((ch.stats[k] || 0) + d); }

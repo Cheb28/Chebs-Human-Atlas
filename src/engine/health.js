@@ -2,6 +2,7 @@
 // typed disability, healthcare access/cost, mental health, and physical aging.
 // Treatment follows one standing player policy so the yearly loop never blocks.
 import { medianWage } from './countries.js';
+import { bmi, physicalCapacityFactor, refreshLifeConditions } from './lifeState.js';
 
 export function initHealth() {
   return {
@@ -77,12 +78,15 @@ function normalizeHealth(ch, resetYear = true) {
   }
 }
 
-function riskMultiplier(country) {
+function riskMultiplier(country, ch) {
   const obesity = (country.obesity ?? 15) / 100;
   const tobacco = (country.tobacco ?? 20) / 100;
   const sanitation = (country.sanitation ?? 80) / 100;
   const water = (country.waterAccess ?? 80) / 100;
-  return 0.7 + obesity * 0.6 + tobacco * 0.5 + (1 - sanitation) * 0.6 + (1 - water) * 0.6;
+  const measuredBmi=bmi(ch),bodyRisk=measuredBmi>=35?.3:measuredBmi>=30?.15:measuredBmi<17?.12:0;
+  const smoking=Math.min(.65,(ch.lifeState?.exposures?.packYears||0)/45);
+  const alcohol=(ch.lifeState?.measurements?.drinksWeek||0)>=14?.18:0;
+  return 0.7 + obesity * 0.35 + tobacco * 0.25 + bodyRisk + smoking + alcohol + (1 - sanitation) * 0.6 + (1 - water) * 0.6;
 }
 
 export function healthcareCoverage(country, ch) {
@@ -206,7 +210,7 @@ function rollNewChronic(ch, country, rng, logs) {
   for (const [id, def] of Object.entries(CHRONIC)) {
     if (ch.age < def.minAge || ch.health.conditions.some(c => c.id === id)) continue;
     let p = def.annual(country, ch.age);
-    p *= 1 - ch.stats.fitness / 400;
+    p *= 1.18-physicalCapacityFactor(ch)*.38;
     if (rng.chance(p)) {
       addCondition(ch, id);
       const text = `Diagnosed with ${def.name}.`;
@@ -276,14 +280,15 @@ function resolveAccident(ch, country, rng, logs) {
 }
 
 function resolveMentalHealth(ch, country, logs) {
-  if (ch.stats.happiness < 25) ch.health.lowHappinessStreak += 1; else ch.health.lowHappinessStreak = 0;
+  const state=refreshLifeConditions(ch);
+  if (['Distressed','In crisis'].includes(state.emotionalState)||['Overloaded','Breaking point'].includes(state.stress)) ch.health.lowHappinessStreak += 1; else ch.health.lowHappinessStreak = 0;
   if (ch.age >= 12 && ch.health.lowHappinessStreak >= 2 && !ch.health.hasDepression) {
     ch.health.hasDepression = true;
     addCondition(ch, 'depression', { name: 'Depression', decay: 1.2, mgmtCost: 0.05, mortalityRisk: 0.10 });
     logs.push({ category: 'health', text: 'Developed depression after prolonged severe unhappiness.' });
     record(ch, 'Diagnosed with depression.');
   }
-  if (ch.health.hasDepression && country.healthTier >= 3 && ch.health.healthPolicy !== 'never' && ch.stats.happiness > 40) {
+  if (ch.health.hasDepression && country.healthTier >= 3 && ch.health.healthPolicy !== 'never' && !['Distressed','In crisis'].includes(state.emotionalState)) {
     ch.health.hasDepression = false;
     ch.health.conditions = ch.health.conditions.filter(c => c.id !== 'depression');
     logs.push({ category: 'health', text: 'Recovered from depression with treatment and improved circumstances.' });
@@ -294,12 +299,11 @@ function resolveMentalHealth(ch, country, logs) {
 function resolvePhysicalAging(ch, rng, logs) {
   const age = ch.age;
   let decline = age >= 75 ? 1.6 : age >= 65 ? 0.9 : age >= 50 ? 0.4 : age >= 40 ? 0.15 : 0;
-  decline *= 1.2 - ch.stats.fitness / 250;
+  decline *= 1.35-physicalCapacityFactor(ch)*.45;
   ch.health.physicalDecline += decline;
-  ch.stats.fitness = clamp(ch.stats.fitness - decline);
   if (age >= 65) {
     const conditionBurden = ch.health.conditions.reduce((s, c) => s + c.severity, 0);
-    const frailtyGain = Math.max(0, (age - 65) / 80 + conditionBurden / 80 - ch.stats.fitness / 500);
+    const frailtyGain = Math.max(0, (age - 65) / 80 + conditionBurden / 80 - physicalCapacityFactor(ch)/5);
     const before = ch.health.frailty;
     ch.health.frailty = Math.min(100, ch.health.frailty + frailtyGain * 3);
     if (before < 25 && ch.health.frailty >= 25) logs.push({ category: 'health', text: 'Age-related frailty began to limit your physical stamina.' });
@@ -319,8 +323,8 @@ export function resolveHealth(ch, country, rng, ctx) {
   normalizeHealth(ch);
   const logs = [];
   let medicalCosts = 0;
-  const risk = riskMultiplier(country);
-  const fitFactor = 1 - ch.stats.fitness / 300;
+  const risk = riskMultiplier(country,ch);
+  const fitFactor = 1.15-physicalCapacityFactor(ch)*.35;
   const cov = healthcareCoverage(country, ch);
 
   if (cov.premium > 0 && ch.age >= 18 && ch.employmentStatus !== 'student') {
@@ -336,7 +340,8 @@ export function resolveHealth(ch, country, rng, ctx) {
   resolvePhysicalAging(ch, rng, logs);
   disabilityProgression(ch, rng, logs);
 
-  if (ch.health.conditions.length === 0 && !ch.health.disabled && ch.stats.health >= 60) ch.health.healthyYears += 1;
+  if (ch.health.conditions.length === 0 && !ch.health.disabled) ch.health.healthyYears += 1;
+  refreshLifeConditions(ch);
   ch.health.lastYear.costs = medicalCosts;
   ch.health.lifetimeMedicalSpend += medicalCosts + (ctx.insuranceLine?.amount || 0);
   return { logs, medicalCosts, disabled: ch.health.disabled };

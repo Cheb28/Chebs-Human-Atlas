@@ -73,6 +73,6 @@ const pakistan=COUNTRY_BY_NAME.Pakistan, us=COUNTRY_BY_NAME['United States'];
 }
 
 const ui=readFileSync(new URL('../src/ui/tabs/Religion.jsx',import.meta.url),'utf8');
-for(const label of ['Overview','Observance','Beliefs','Charity','Conduct & Reconciliation','Community & Family','Career','Legacy'])assert(ui.includes(label));
+for(const label of ['Overview','Beliefs','Practice & Reconciliation','Family & Community','Charity','Legacy'])assert(ui.includes(label));
 assert(ui.includes('This remains enabled every year.'));
 console.log('Phase 10.4.1 checks passed.');

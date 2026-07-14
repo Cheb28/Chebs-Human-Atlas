@@ -1,6 +1,7 @@
 import { COUNTRY_BY_ID, medianWage } from '../../engine/countries.js';
 import { healthcareCoverage, disabilityBurden, severityLabel } from '../../engine/health.js';
-import { STAT_COLORS, money } from '../format.js';
+import { money } from '../format.js';
+import { bmiClassification, lifeConditionSummary } from '../../engine/lifeState.js';
 
 const POLICIES = [
   { id: 'always', label: 'Always treat', desc: 'seek care even when it strains your finances' },
@@ -18,17 +19,22 @@ export default function Health({ state, refresh }) {
   const isMixed = country.healthcareArchetype === 'mixed';
   const setPolicy = id => { health.healthPolicy = id; refresh(); };
   const recent = [...(health.medicalHistory || [])].reverse().slice(0, 8);
+  const life=ch.lifeState,w=lifeConditionSummary(ch),recorded=life.body.recorded;
+  const frailty=health.frailty||0,frailtyLabel=frailty>=60?'Severe':frailty>=35?'Moderate':frailty>=15?'Mild':'Not apparent';
 
   return <div className="grid cols-2">
     <div>
       <div className="panel">
         <h3>Your Health</h3>
-        <div className="stat-row"><span className="label">Health</span><div className="bar"><span style={{ width: `${ch.stats.health}%`, background: STAT_COLORS.health }} /></div><span className="val">{Math.round(ch.stats.health)}</span></div>
-        <div className="stat-row"><span className="label">Fitness</span><div className="bar"><span style={{ width: `${ch.stats.fitness}%`, background: STAT_COLORS.fitness }} /></div><span className="val">{Math.round(ch.stats.fitness)}</span></div>
-        <div className="kv"><span className="k">Age-related frailty</span><span className="v">{Math.round(health.frailty || 0)} / 100</span></div>
+        <div className="kv"><span className="k">Physical condition</span><span className="v">{w.physicalCondition} · {w.physicalTrend}</span></div>
+        <div className="kv"><span className="k">Daily function</span><span className="v">{w.function}</span></div>
+        <div className="kv"><span className="k">Energy</span><span className="v">{w.energy}</span></div>
+        <div className="kv"><span className="k">Age-related frailty</span><span className="v">{frailtyLabel}</span></div>
         <div className="kv"><span className="k">Healthy years recorded</span><span className="v">{health.healthyYears || 0}</span></div>
         <div className="kv"><span className="k">Lifetime personal medical spending</span><span className="v">{money(health.lifetimeMedicalSpend || 0)}</span></div>
       </div>
+
+      <div className="panel" style={{marginTop:12}}><h3>Body Measurements</h3>{recorded?<><div className="kv"><span>Height</span><span>{recorded.heightCm.toFixed(0)} cm · {(recorded.heightCm/2.54).toFixed(0)} in</span></div><div className="kv"><span>Weight</span><span>{recorded.weightKg.toFixed(1)} kg · {(recorded.weightKg*2.20462).toFixed(1)} lb</span></div><div className="kv"><span>BMI</span><span>{recorded.bmi.toFixed(1)} · {bmiClassification(recorded.bmi)}</span></div><p className="muted">Recorded at age {recorded.age} through {recorded.source}. BMI is only one screening measure and does not define overall health.</p></>:<div className="muted">No body measurement has been recorded.</div>}<div className="kv"><span>Usual sleep</span><span>{life.measurements.sleepHoursNight.toFixed(1)} hours/night</span></div><div className="kv"><span>Exercise</span><span>{Math.round(life.measurements.exerciseMinutesWeek)} min/week</span></div><div className="kv"><span>Smoking exposure</span><span>{life.exposures.packYears.toFixed(1)} pack-years</span></div><div className="kv"><span>Alcohol</span><span>{life.measurements.drinksWeek} drinks/week</span></div></div>
 
       <div className="panel" style={{ marginTop: 12 }}>
         <h3>Chronic Conditions</h3>

@@ -1,4 +1,5 @@
 import { medianWage } from './countries.js';
+import { lifeConditionSummary } from './lifeState.js';
 
 const NONE = /^(none|unaffiliated|atheist|agnostic|no religion|not religious|unspecified)$/i;
 
@@ -229,7 +230,7 @@ export function resolveReligionYear(ch, country, rng, { earnedIncome = 0 } = {})
   let completed = 0, blocked = [];
   if (eligible) {
     for (const item of enabled) {
-      const healthBlocked = ch.stats.health < 15 && rng.chance(.35);
+      const healthBlocked = ['Critical','Frail'].includes(lifeConditionSummary(ch).physicalCondition) && rng.chance(.35);
       if (healthBlocked) blocked.push(item.id); else completed += 1;
     }
     const target = enabled.length ? 30 + completed / enabled.length * 65 : 20;
@@ -261,7 +262,7 @@ export function resolveReligionYear(ch, country, rng, { earnedIncome = 0 } = {})
   let pilgrimage = 'not planned';
   if (r.pilgrimage.planned && !r.pilgrimage.completed) {
     const cost = medianWage(country) * .45, available = (ch.money.cash || 0) + (ch.money.bank || 0) + earnedIncome;
-    if (ch.age < 18 || ch.stats.health < 30) { pilgrimage = 'deferred for eligibility, health, or access'; logs.push('Your planned lifetime pilgrimage was deferred.'); }
+    if (ch.age < 18 || ['Critical','Frail','Physically limited'].includes(lifeConditionSummary(ch).physicalCondition)) { pilgrimage = 'deferred for eligibility, health, or access'; logs.push('Your planned lifetime pilgrimage was deferred.'); }
     else if (cost > available) { pilgrimage = 'deferred as unaffordable'; logs.push('Your planned lifetime pilgrimage was deferred because it was unaffordable.'); }
     else {
       pilgrimage = 'completed'; r.pilgrimage.completed = true; r.pilgrimage.completedAge = ch.age; r.pilgrimage.planned = false;

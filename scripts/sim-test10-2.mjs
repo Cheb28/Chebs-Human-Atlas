@@ -32,7 +32,7 @@ assert.deepEqual(countryFacts(japan, state.character).citizenships, ['United Sta
 const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const countryTab = await readFile(new URL('../src/ui/tabs/Country.jsx', import.meta.url), 'utf8');
 const map = await readFile(new URL('../src/ui/CountryMap.jsx', import.meta.url), 'utf8');
-assert.match(app, /lazy\(\(\) => import\('\.\/ui\/tabs\/Country\.jsx'\)\)/, 'Country tab is lazy-loaded');
+assert.match(app, /lazy\(\(\) => import\('\.\/ui\/tabs\/Places\.jsx'\)\)/, 'Places tab is lazy-loaded');
 assert.match(countryTab, /lazy\(\(\) => import\('\.\.\/CountryMap\.jsx'\)\)/, 'Map library is nested behind another lazy import');
 assert.match(countryTab, /About This Country Model/);
 assert.match(countryTab, /not legal, immigration, financial, or medical advice/);

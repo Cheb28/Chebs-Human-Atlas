@@ -356,7 +356,8 @@ Country `lawTier`: strong / medium / weak rule of law (per DATA_PIPELINE; from l
 
 ## 14. Events
 
-**Presentation rule (critical):** events never modal-block the game. Each year's events land in the **Events tab** as a list; the tab badge shows counts. Two classes:
+**Presentation rule (critical):** events never modal-block the game. Unresolved decisions appear in
+Overview with a stated default; resolved events remain in the Life Log and relevant histories. Two classes:
 
 - **Informational** (majority): auto-applied, logged (e.g., "Inflation hit 9% this year", "Your sister married").
 - **Decision events:** carry option buttons and a **stated default** that auto-applies if the player advances the year without answering (e.g., job offer default: decline; draft notice default: comply). Truly blocking events are only: death of the player (life-summary screen) and heir selection.
@@ -380,10 +381,10 @@ War events raise mortality, crash the local economy (−30% wages), unlock the a
 
 **Top tab bar** (persistent), one window per tab — organized, no mega-screen (user requirement #16):
 
-`Overview | Country | Activities | Finances | Career | Education | Family | Health | Business | Travel | Religion | Law | Events | World | Settings`
+`Overview | Activities | Work | Education | Family | Health | Finances | Places | Religion | Law | Settings`
 
-- **Persistent header:** name, age, location flag+city, cash, Health/Happiness mini-bars, **Advance Year** button (always visible), Events badge.
-- **Overview:** stat bars, current situation summary, this-year log digest, net-worth sparkline.
+- **Persistent header:** name, age, location, physical condition, emotional state, and net worth. The one-year age button remains centered at the bottom.
+- **Overview:** descriptive life condition, recorded body measurements, unresolved decisions, needs-attention links, identity summary, and Life Log.
 - **World:** browse any country's profile (its stats, systems, tiers) — doubles as the emigration research screen.
 - **Religion:** mini-tabs separate public identity, private belief, persistent observance commitments,
   charity, conduct/reconciliation, community and interfaith family life, vocational preparation, and

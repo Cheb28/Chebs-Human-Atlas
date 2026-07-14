@@ -4,19 +4,15 @@ export const CURRENT_PHASE = 10;
 
 export const TABS = [
   { id: 'overview', label: 'Overview', phase: 1 },
-  { id: 'country', label: 'Country', phase: 10 },
   { id: 'activities', label: 'Activities', phase: 2 },
-  { id: 'finances', label: 'Finances', phase: 2 },
-  { id: 'career', label: 'Career', phase: 2 },
+  { id: 'work', label: 'Work', phase: 2 },
   { id: 'education', label: 'Education', phase: 2 },
   { id: 'family', label: 'Family', phase: 4 },
   { id: 'health', label: 'Health', phase: 3 },
-  { id: 'business', label: 'Business', phase: 5 },
-  { id: 'travel', label: 'Travel', phase: 6 },
+  { id: 'finances', label: 'Finances', phase: 2 },
+  { id: 'places', label: 'Places', phase: 10 },
   { id: 'religion', label: 'Religion', phase: 10 },
   { id: 'law', label: 'Law', phase: 4 },
-  { id: 'events', label: 'Events', phase: 3 },
-  { id: 'world', label: 'World', phase: 1 },
   { id: 'settings', label: 'Settings', phase: 1 },
 ];
 

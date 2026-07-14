@@ -14,9 +14,13 @@ import { applyForSocialHousing, chooseHousing, homePrice, setChildContributionPo
 import { marriageNameChoices, requestLegalNameChange, setChildName } from './names.js';
 import { bankProfile, drawCredit, openCreditCard, recordInvestmentSale, repayConsumerDebt, requestBudgetChange, sendRemittance, setFinancialGoal, setTaxCompliance, setTaxFilingChoice, takePersonalLoan, transferBetweenAccounts } from './financialSystems.js';
 import { changePublicReligion, planLifetimePilgrimage, reconcileConduct, setPrivateBelief, setReligionCommitment, setReligiousBranch, setReligiousCareer, setReligiousCommunity, updateCharityPlan } from './religion.js';
+import { setDiet, setHabit, setSleepTarget } from './lifeState.js';
 
 export function setActivities(state, ids) { state.character.selectedActivities = ids; }
 export function setLifestyle(state, ls) { state.character.lifestyle = ls; }
+export function updateHabit(state, id, value) { const ch=state.character; return setHabit(ch, COUNTRY_BY_ID[ch.countryId], id, value); }
+export function updateDiet(state, value) { const ch=state.character; return setDiet(ch, COUNTRY_BY_ID[ch.countryId], value); }
+export function updateSleepTarget(state, hours) { const ch=state.character; return setSleepTarget(ch, COUNTRY_BY_ID[ch.countryId], hours); }
 export function setPrivateSchool(state, enabled) { state.character.education.private = enabled; }
 export function setResistDropout(state, enabled) { state.character.education.resistDropout = enabled; }
 export function updateReligionCommitment(state, id, enabled) { return setReligionCommitment(state.character, id, enabled); }

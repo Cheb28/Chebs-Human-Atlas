@@ -9,19 +9,15 @@ import { slotBudget } from './engine/activities.js';
 import Credits from './ui/Credits.jsx';
 
 const Overview = lazy(() => import('./ui/tabs/Overview.jsx'));
-const Country = lazy(() => import('./ui/tabs/Country.jsx'));
-const World = lazy(() => import('./ui/tabs/World.jsx'));
 const Activities = lazy(() => import('./ui/tabs/Activities.jsx'));
 const Finances = lazy(() => import('./ui/tabs/Finances.jsx'));
 const Career = lazy(() => import('./ui/tabs/Career.jsx'));
 const Education = lazy(() => import('./ui/tabs/Education.jsx'));
 const Health = lazy(() => import('./ui/tabs/Health.jsx'));
-const Events = lazy(() => import('./ui/tabs/Events.jsx'));
 const LifeSummary = lazy(() => import('./ui/LifeSummary.jsx'));
 const Family = lazy(() => import('./ui/tabs/Family.jsx'));
 const Law = lazy(() => import('./ui/tabs/Law.jsx'));
-const Business = lazy(() => import('./ui/tabs/Business.jsx'));
-const Travel = lazy(() => import('./ui/tabs/Travel.jsx'));
+const Places = lazy(() => import('./ui/tabs/Places.jsx'));
 const Religion = lazy(() => import('./ui/tabs/Religion.jsx'));
 const Settings = lazy(() => import('./ui/tabs/Settings.jsx'));
 
@@ -102,7 +98,7 @@ export default function App() {
 
   const nPending = state.character.pendingDecisions?.length || 0;
   const badges = {};
-  if (nPending > 0) badges.events = nPending;
+  if (nPending > 0) badges.overview = nPending;
 
   const tabProps = { state, refresh };
 
@@ -112,20 +108,16 @@ export default function App() {
       <TabBar active={tab} onChange={setTab} badges={badges} />
       <div className="content">
         <Suspense fallback={<div className="loading" role="status">Loading screen…</div>}>
-        {tab === 'overview' && <Overview state={state} onOpenCountry={() => setTab('country')} />}
-        {tab === 'country' && <Country state={state} />}
+        {tab === 'overview' && <Overview state={state} refresh={refresh} onNavigate={setTab} />}
         {tab === 'activities' && <Activities {...tabProps} />}
         {tab === 'finances' && <Finances {...tabProps} />}
-        {tab === 'career' && <Career {...tabProps} />}
+        {tab === 'work' && <Career {...tabProps} />}
         {tab === 'education' && <Education {...tabProps} />}
         {tab === 'family' && <Family {...tabProps} />}
         {tab === 'health' && <Health {...tabProps} />}
-        {tab === 'events' && <Events {...tabProps} />}
         {tab === 'law' && <Law {...tabProps} />}
-        {tab === 'business' && <Business {...tabProps} />}
-        {tab === 'travel' && <Travel {...tabProps} />}
+        {tab === 'places' && <Places {...tabProps} />}
         {tab === 'religion' && <Religion {...tabProps} />}
-        {tab === 'world' && <World />}
         {tab === 'settings' && <Settings saveTools={saveTools} onNotice={setNotice} />}
         </Suspense>
       </div>
@@ -152,7 +144,7 @@ export default function App() {
                 <button onClick={() => { setTab('activities'); setAdvanceWarnings(null); }}>Set activities</button>
               )}
               {advanceWarnings.includes('unemployed') && (
-                <button onClick={() => { setTab('career'); setAdvanceWarnings(null); }}>View career</button>
+                <button onClick={() => { setTab('work'); setAdvanceWarnings(null); }}>View work</button>
               )}
               <button onClick={() => setAdvanceWarnings(null)}>Go back</button>
               <button className="primary" onClick={advanceNow}>Continue anyway</button>

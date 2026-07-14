@@ -16,9 +16,9 @@ recordWorkYear(fresh,'service');assert.equal(fresh.experience.sectors.service,1,
 
 assert(ACTIVITIES.some(a=>a.id==='studying'&&a.label==='Studying & Reading'));
 assert(!ACTIVITIES.some(a=>a.id==='reading'),'separate reading activity was removed');
-fresh.age=12;fresh.education.enrolled=true;const before={intelligence:fresh.stats.intelligence,happiness:fresh.stats.happiness,performance:fresh.education.performance};
+fresh.age=12;fresh.education.enrolled=true;const before={knowledge:fresh.lifeState.aptitudes.knowledgeYears,performance:fresh.education.performance};
 applyActivities(fresh,us,{next:()=>.5},['studying']);
-assert(fresh.stats.intelligence>before.intelligence&&fresh.stats.happiness>before.happiness&&fresh.education.performance>before.performance);
+assert(fresh.lifeState.aptitudes.knowledgeYears>before.knowledge&&fresh.education.performance>before.performance);
 
 const localTurkish=newGame({countryId:turkey.id,ethnicity:'Local',seed:101202}).character;
 assert.deepEqual(localTurkish.nativeLanguages,['Turkish']);

@@ -11,9 +11,7 @@ import {
   resolveConscriptService, resolveEvasion, resolveMilitaryCareer,
   careerWage, isCareerPensionEligible, militaryPension,
 } from './military.js';
-import {
-  costOfLiving, rent, computeTax, bankRealRate, LIFESTYLES,
-} from './economy.js';
+import { costOfLiving, rent, computeTax, bankRealRate } from './economy.js';
 import { resolveHealth, hasSeriousUntreated, mortalityConditionRisk, likelyMedicalCause } from './health.js';
 import { rollEvents, resolveDecision } from './events.js';
 import { resolveFamily } from './family.js';
@@ -28,6 +26,7 @@ import { resolveLanguageDevelopment } from './language.js';
 import { bankProfile, budgetRates, ensureFinancialState, resolveFinancialYear, taxProfile } from './financialSystems.js';
 import { inheritanceRules } from './inheritance.js';
 import { ensureReligionState, recordConduct, resolveReligionYear } from './religion.js';
+import { ensureLifeState, lifeConditionSummary, refreshLifeConditions, resolveLifeStateYear } from './lifeState.js';
 
 function clamp(v, lo = 1, hi = 100) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -37,29 +36,11 @@ function isIndependent(ch) {
   return ch.age >= 18 && !['child', 'student'].includes(ch.employmentStatus);
 }
 
-// ---- Happiness setpoint (section 3) -------------------------------------
-function happinessSetpoint(ch, ctx) {
-  let sp = 50;
-  const wealthIdx = ch.wealthIdx;
-  if (ctx.employed) sp += 5;
-  if (ctx.poverty) sp -= 10;
-  else if (wealthIdx <= 0 && ch.age < 18) sp -= 6; // born destitute
-  if (ch.stats.health < 30) sp -= 10;
-  if (ch.spouse) sp += 5;
-  return sp;
-}
-
 // ---- Age drift (section 3) ----------------------------------------------
 function applyAgeDrift(ch, rng, ctx) {
-  const a = ch.age;
-  const s = ch.stats;
-  if (a >= 65) s.health -= 1.5;
-  else if (a >= 40) s.health -= 0.5;
-  else if (a <= 12) s.health += 0.5;
-  s.health += rng.float(-0.5, 0.5);
-  const sp = happinessSetpoint(ch, ctx);
-  s.happiness += (sp - s.happiness) * 0.3;
-  for (const k of Object.keys(s)) s[k] = clamp(s[k]);
+  // Phase 10.4.1A: age, health, mood, stress, and energy are now resolved from
+  // measured exposures, diagnosed conditions, function, and circumstances.
+  refreshLifeConditions(ch);
 }
 
 // ---- Mortality (section 9.4) --------------------------------------------
@@ -85,8 +66,8 @@ function mortalityProbability(ch, country, ageAtStart = Math.max(0, ch.age - 1))
     const imr = (country.infantMortality ?? 20) / 1000;
     p = imr * 0.12 * (1.1 - ageAtStart * 0.12);
   } else p = baseHazard(country, age);
-  const h = ch.stats.health;
-  const healthMult = h >= 100 ? 0.5 : h <= 20 ? 3 : 3 - (h - 20) / 80 * 2.5;
+  const condition=lifeConditionSummary(ch).physicalCondition;
+  const healthMult={Thriving:.62,Healthy:.82,'Managing health problems':1.12,'Managing serious health problems':1.55,'Physically limited':1.65,Frail:2.35,Critical:3.6}[condition]||1;
   p *= healthMult;
   const medical = mortalityConditionRisk(ch);
   p *= Math.min(3.5, 1 + medical.total * 0.55);
@@ -116,7 +97,7 @@ function chooseCauseOfDeath(ch, country, rng, ageAtStart, war) {
   const medical = likelyMedicalCause(ch);
   if (medical && rng.chance(0.75)) return medical;
   if ((ch.health?.frailty || 0) >= 40 && ch.age >= 70) return 'age-related frailty';
-  if (ch.stats.health < 25) return 'complications of poor health';
+  if (['Critical','Frail','Managing serious health problems'].includes(lifeConditionSummary(ch).physicalCondition)) return 'complications of poor health';
   return ch.age > (country.lifeExpectancy || 70) ? 'natural causes in old age' : 'natural causes';
 }
 
@@ -344,6 +325,7 @@ export function advanceYear(state) {
   ensureBenefits(ch);
   ensureHousing(ch);
   ensureReligionState(ch);
+  ensureLifeState(ch,COUNTRY_BY_ID[ch.countryId],state.rng);
   const rng = state.rng;
   let country = COUNTRY_BY_ID[ch.countryId];
   const log = [];
@@ -425,13 +407,14 @@ export function advanceYear(state) {
 
   // 4. Activities (selected for the year).
   const sideIncome = applyActivities(ch, country, rng, ch.selectedActivities);
-  ch.stats.happiness = clamp(ch.stats.happiness + (LIFESTYLES[ch.lifestyle || 'normal']?.happiness || 0));
   const annualFinance=resolveFinancialYear(ch,country,rng);
   for(const line of annualFinance.logs)log.push(line);
   const family = resolveFamily(ch, country, rng);
   for (const line of family.logs) { log.push(line); pushEvent(ch, 'family', line); }
   // The routine persists. It is reconciled after all status changes below.
   if (ch.age >= 18 && ch.immigration?.residence?.visa?.kind !== 'student') ch.partTimeWork = false;
+  const life=resolveLifeStateYear(ch,country,rng);
+  for(const line of life.logs){log.push(line);pushEvent(ch,'personal',line);}
 
   // 5. Employment resolution (promotion/layoff) for civilian jobs; recession doubles layoffs.
   if (ch.job) for (const l of resolveEmployment(ch, country, rng, { layoffMult: ev.effects.recession ? 2 : 1 })) log.push(l);
@@ -449,6 +432,7 @@ export function advanceYear(state) {
   if (ch.ownsHome && ch.homeValue > 0) ch.homeValue *= 1.02;
   const incomeLines = [];
   incomeLines.push(...family.incomes);
+  incomeLines.push(...life.incomes);
   if (ch.job) {
     let salary = wageFor(country, ch.job, ch);
     if (ev.effects.wageShockPct) salary *= (1 + ev.effects.wageShockPct); // war/recession wage hit
@@ -484,6 +468,7 @@ export function advanceYear(state) {
   const religion = resolveReligionYear(ch, country, rng, { earnedIncome });
   for (const line of religion.logs) { log.push(line); pushEvent(ch, 'personal', line); }
   extraExpenses.push(...religion.expenses);
+  extraExpenses.push(...life.expenses);
   extraExpenses.push(...annualFinance.expenses);
   extraExpenses.push(...family.expenses);
   if (hctx.insuranceLine) extraExpenses.push(hctx.insuranceLine);

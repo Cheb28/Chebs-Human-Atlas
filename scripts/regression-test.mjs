@@ -63,6 +63,7 @@ const korea = COUNTRY_BY_NAME['South Korea'];
   ch.education.performance = 70;
   ch.education.stage = 'secondary_done';
   ch.employmentStatus = 'unemployed';
+  ch.military.obligationMet = true; // isolate the education duration from random wartime call-up
   enroll(ch, us, 'university', { useLoan: true });
   const annual = ch.education._tuition;
   for (let i = 0; i < 4; i++) stepYear(s);

@@ -2,6 +2,7 @@
 import { medianWage } from './countries.js';
 import { genderRightsProfile, needsHusbandWorkApproval } from './genderRights.js';
 import { healthWorkCapacity } from './health.js';
+import { socialConfidenceFactor } from './lifeState.js';
 import { isIrregular } from './immigration.js';
 import { workLanguageMultiplier } from './language.js';
 import { recordPenalty } from './judicial.js';
@@ -84,7 +85,7 @@ export function resolveEmployment(ch,country,rng,{layoffMult=1}={}){
   }
   const next=sec.rungs[job.rung+1];if(ch.immigration?.residence?.visa?.temporaryJobsOnly||!next||!next.gate(ch)||job.yearsAtRung<3)return log;
   const economy=Math.max(.55,Math.min(1.15,1-(country.unemployment||7)/100+(country.gdpGrowth||2)/100));
-  const vacancy=.55/(1+job.rung*.65),merit=Math.min(.15,(ch.stats.charisma-45)/500+relevantExperience(ch,job.sector)/300),p=Math.max(.025,Math.min(.22,(.07+merit)*vacancy*economy*Math.max(.5,capacity)));
+  const vacancy=.55/(1+job.rung*.65),merit=Math.min(.15,(socialConfidenceFactor(ch)-1)*.12+relevantExperience(ch,job.sector)/300),p=Math.max(.025,Math.min(.22,(.07+merit)*vacancy*economy*Math.max(.5,capacity)));
   if(rng.chance(p)){job.rung++;job.yearsAtRung=0;recordCareerEvent(ch,'promoted',job);log.push(`Promoted to ${next.title}.`);}
   return log;
 }

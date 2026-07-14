@@ -1,5 +1,6 @@
 // Education system (GAME_DESIGN section 5).
 import { medianWage } from './countries.js';
+import { learningAptitudeFactor } from './lifeState.js';
 import { genderRightsProfile } from './genderRights.js';
 import { healthEducationMultiplier } from './health.js';
 import { addAccomplishment, addTrainingYear, ensureExperience } from './experience.js';
@@ -89,7 +90,7 @@ export function resolveEducation(ch, country, rng) {
 
     // Academic performance reflects school quality, health, intelligence, and study habits.
     const healthMult = healthEducationMultiplier(ch);
-    const target=35+(ch.stats.intelligence||50)*.35+country.educationTier*5+(ed.private?7:0);
+    const target=43+learningAptitudeFactor(ch)*18+country.educationTier*5+(ed.private?7:0);
     ed.performance=Math.max(0,Math.min(100,ed.performance+(target-ed.performance)*.18*healthMult));
     ed.schoolYearsCompleted+=1;
     if (healthMult < 0.7) log.push('Health limitations and medical absences reduced your school progress this year.');

@@ -12,6 +12,7 @@ import { initializeFamilyEconomy } from './household.js';
 import { ensureFinancialState } from './financialSystems.js';
 import { initExperience } from './experience.js';
 import { initReligionState } from './religion.js';
+import { initLifeState } from './lifeState.js';
 
 export const WEALTH_CLASSES = ['Destitute', 'Poor', 'Middle', 'Affluent', 'Rich'];
 const PERSONALITY_TRAITS = ['ambitious','caring','independent','social','cautious','creative','resilient','curious'];
@@ -72,6 +73,7 @@ function makePerson(rng, country, { relation, sex, ageOffset = 0, wealthClass })
     citizenships: [country.id],
   };
   person.religionState = initReligionState(person);
+  person.lifeState = initLifeState({...person,age:Math.max(0,-ageOffset)}, country, rng);
   return person;
 }
 
@@ -167,6 +169,7 @@ export function createCharacter(rng, options = {}) {
     family: [],
   };
   character.religionState = initReligionState(character);
+  character.lifeState = initLifeState(character, country, rng);
 
   // clamp stats
   for (const k of Object.keys(character.stats)) {
@@ -193,6 +196,7 @@ export function createCharacter(rng, options = {}) {
     parent.ethnicity = rollDistribution(rng, foreign.ethnicGroups, 'Local');
     parent.religion = rollDistribution(rng, foreign.religions, 'None');
     parent.religionState = initReligionState(parent);
+    parent.lifeState = initLifeState({...parent,age:Math.max(18,-(parent.ageOffset||-25))}, foreign, rng);
     if (childInherits) character.immigration.citizenships.push(foreign.id);
     character.immigration.citizenships = [...new Set(character.immigration.citizenships)];
   };

@@ -13,9 +13,8 @@ import {
 import { money } from '../format.js';
 
 const TABS = [
-  ['overview', 'Overview'], ['observance', 'Observance'], ['beliefs', 'Beliefs'],
-  ['charity', 'Charity'], ['conduct', 'Conduct & Reconciliation'],
-  ['community', 'Community & Family'], ['career', 'Career'], ['legacy', 'Legacy'],
+  ['overview', 'Overview'], ['beliefs', 'Beliefs'], ['observance', 'Practice & Reconciliation'],
+  ['community', 'Family & Community'], ['charity', 'Charity'], ['legacy', 'Legacy'],
 ];
 
 const CAREERS = ['Community religious leader', 'Clergy or worship leader', 'Religious teacher or scholar', 'Chaplain', 'Monastic vocation', 'Religious charity worker'];
@@ -116,7 +115,7 @@ export default function Religion({ state, refresh }) {
       </div>
     </div>}
 
-    {section === 'conduct' && <div className="panel">
+    {section === 'observance' && <div className="panel" style={{marginTop:12}}>
       <h3>Conduct and reconciliation</h3>
       <p className="muted">This records significant conduct over a lifetime without declaring that the character is a bad person. Later tradition expansions determine what is considered a sin and how confession, repentance, restitution, forgiveness, or reconciliation applies.</p>
       {religion.conduct.length === 0 && <div className="muted">No significant conduct requiring reconciliation has been recorded.</div>}
