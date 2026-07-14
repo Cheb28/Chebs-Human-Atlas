@@ -21,7 +21,7 @@ export default function Family({ state, refresh }) {
   ch.familyPlans ||= {adoption:null,foster:false,caregivingId:null,reconciliationId:null};
   ch.safety ||= {concern:false};
   const relatives=(ch.family||[]).filter(p=>p.relation!=='Child'),children=(ch.family||[]).filter(p=>p.relation==='Child');
-  const friends=(ch.social.friends||[]).filter(f=>f.alive),housing=ensureHousing(ch),approvalNeeded=needsHusbandWorkApproval(ch,country);
+  const friends=(ch.social.friends||[]).filter(f=>f.alive&&!f.ended),formerFriends=(ch.social.friends||[]).filter(f=>f.ended||!f.alive),housing=ensureHousing(ch),approvalNeeded=needsHusbandWorkApproval(ch,country);
   const financePeople=[...(ch.spouse?.alive?[ch.spouse]:[]),...(ch.family||[]).filter(p=>p.alive)];
 
   return <div className="grid cols-2">
@@ -58,8 +58,9 @@ export default function Family({ state, refresh }) {
     <div className="panel">
       <h3>Friendships</h3>
       {ch.age>=6&&<label className="check-row"><input type="checkbox" checked={ch.social.friendIntent} onChange={e=>{setFriendIntent(state,e.target.checked);refresh();}}/><span>Make time to meet a new friend this year</span></label>}
-      {friends.length===0&&<div className="muted">No active close friendships.</div>}
-      {friends.map(f=><div className="kv" key={f.id}><span>{displayName(f)} · {f.yearsKnown||0} years</span><span>{Math.round(f.relationshipScore)}/100 · {(f.personality||[]).map(titleCase).join(', ')}</span></div>)}
+      {friends.length===0&&<div className="muted">No active friendships.</div>}
+      {friends.map(f=><div className="kv" key={f.id}><span>{displayName(f)} · {f.yearsKnown||0} years</span><span>{titleCase(f.circle||'ordinary')} · {f.relationshipScore>=75?'very close':f.relationshipScore>=55?'supportive':f.relationshipScore>=35?'distant':'strained'}</span></div>)}
+      {formerFriends.length>0&&<div className="muted" style={{marginTop:8}}>{formerFriends.length} former or deceased friend{formerFriends.length===1?'':'s'} in your life history.</div>}
     </div>
 
     <div className="panel">

@@ -70,6 +70,7 @@ export function chooseServe(ch, country, { alternative = false } = {}) {
   ch.military.alternative = alternative;
   ch.military.remaining = serviceYearsFor(ch,country,{alternative});
   ch.employmentStatus = 'military';
+  if(ch.education?.enrolled)ch.education.paused=true;
   ch.job = null;
 }
 export function chooseDefer(ch) {
@@ -105,7 +106,8 @@ export function resolveConscriptService(ch, country, rng) {
     ch.military.status = 'veteran';
     ch.military.obligationMet = true;
     ch.veteran = true;
-    ch.employmentStatus = 'unemployed';
+    ch.employmentStatus = ch.education?.enrolled?'student':'unemployed';
+    if(ch.education?.enrolled)ch.education.paused=false;
     log.push(`Completed ${alt ? 'alternative civilian' : 'military'} service.`);
   }
   return log;
@@ -143,6 +145,7 @@ export function enlistVoluntary(ch) {
   ch.military.status = 'career';
   ch.military.rung = 0;
   ch.employmentStatus = 'military';
+  if(ch.education?.enrolled)ch.education.paused=true;
   ch.job = null;
 }
 

@@ -194,8 +194,11 @@ function resolveFinances(ch, country, rng, incomeLines, log, extraExpenses = [])
   const inheritanceModel=inheritanceRules(country),taxableGifts=Math.max(0,(financial.tax.giftsReceived||0)-inheritanceModel.exemption*.1);
   const giftTax=taxableGifts*inheritanceModel.giftTaxRate;
   personalTax.incomeTax+=investmentTax+pensionTax+giftTax;personalTax.total+=investmentTax+pensionTax+giftTax;
-  const honestTax=computeTax(country,personalTaxable+householdTaxable,{joint}).total+investmentTax+pensionTax+giftTax;
-  const evaded=Math.max(0,honestTax-personalTax.total-householdTax.total);
+  const honestDirectTax=joint
+    ? computeTax(country,personalTaxable+householdTaxable,{joint:true}).total
+    : computeTax(country,personalTaxable).total+computeTax(country,householdTaxable).total;
+  const honestTax=honestDirectTax+investmentTax+pensionTax+giftTax;
+  const evaded=compliance==='underreport'?Math.max(0,honestTax-personalTax.total-householdTax.total):0;
   statement.tax = {
     incomeTax: personalTax.incomeTax + householdTax.incomeTax,
     socialContrib: personalTax.socialContrib + householdTax.socialContrib,
@@ -229,11 +232,15 @@ function resolveFinances(ch, country, rng, incomeLines, log, extraExpenses = [])
     addExpense({ label: imprisoned ? 'Prison necessities' : serving ? 'Living costs (service)' : 'Cost of living before consumption tax', amount: col-consumptionTax }, true);
     if (rentAmt > 0) addExpense({ label: 'Rent', amount: rentAmt }, true);
     if (ch.ownsHome && ch.debts.mortgage > 0) {
-      const mortgageRate=bankProfile(country).loanRate*.65;
-      const interest=ch.debts.mortgage*mortgageRate;
-      ch.debts.mortgage+=interest;
-      const payment = Math.min(ch.debts.mortgage, Math.max(ch.debts.mortgage * 0.08, interest));
-      ch.debts.mortgage -= payment;
+      ch.mortgage||={rate:bankProfile(country).loanRate*.65,termYears:country.incomeTier>=3?30:15,remainingYears:country.incomeTier>=3?30:15};
+      const mortgageRate=ch.mortgage.rate;
+      const principal=ch.debts.mortgage,interest=principal*mortgageRate;
+      const years=Math.max(1,ch.mortgage.remainingYears||1);
+      const scheduled=mortgageRate>0?principal*(mortgageRate/(1-Math.pow(1+mortgageRate,-years))):principal/years;
+      const payment = Math.min(principal+interest,scheduled);
+      ch.debts.mortgage = principal+interest-payment;
+      ch.mortgage.remainingYears=Math.max(0,years-1);
+      if(ch.debts.mortgage<1){ch.debts.mortgage=0;ch.mortgage.remainingYears=0;}
       addExpense({ label: `Mortgage payment (${(mortgageRate*100).toFixed(1)}% rate)`, amount: payment }, true);
     }
   }
@@ -406,7 +413,8 @@ export function advanceYear(state) {
   }
 
   // 3.5 Job search: if seeking and a target sector is set, attempt hire this year.
-  if (['unemployed', 'informal'].includes(ch.employmentStatus) && ch.jobSearch.sector && !ch.job) {
+  const fullTimeStudent=ch.education?.enrolled&&['university','vocational'].includes(ch.education.stage);
+  if (!fullTimeStudent && ['unemployed', 'informal'].includes(ch.employmentStatus) && ch.jobSearch.sector && !ch.job) {
     const { attemptHire } = jobsModule;
     const res = attemptHire(ch, country, ch.jobSearch.sector, rng, { firstJob: !ch.everEmployed });
     log.push(res.log);
@@ -460,7 +468,8 @@ export function advanceYear(state) {
   if (Math.abs(invGain) >= 1) incomeLines.push({ label: 'Investment value change', amount: invGain, nonCash: true });
   const biz = resolveBusiness(ch, country, rng);
   for (const l of biz.logs) log.push(l);
-  if (Math.abs(biz.income) >= 1) incomeLines.push({ label: 'Business value change', amount: biz.income, nonCash: true });
+  if (Math.abs(biz.valueChange||0) >= 1) incomeLines.push({ label: 'Retained business earnings', amount: biz.valueChange, nonCash: true });
+  if ((biz.income||0) > 0) incomeLines.push({ label: 'Business owner draw', amount: biz.income });
   // Layered social insurance and means-tested safety-net benefits.
   const earnedIncome = incomeLines.filter(x => !x.untaxed && !x.nonCash).reduce((s, x) => s + x.amount, 0);
   incomeLines.push(...evaluateBenefits(ch, country, { earnedIncome }));

@@ -131,6 +131,7 @@ export function createCharacter(rng, options = {}) {
     judicial: initJudicial(),
     job: null,
     jobSearch: { sector: null },
+    careerHistory: [],
     everEmployed: false,
     employmentStatus: 'child',
     lifestyle: 'normal',

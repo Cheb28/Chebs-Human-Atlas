@@ -84,17 +84,23 @@ function makeChild(ch, country, rng, origin = 'birth') {
 function resolveFriends(ch, country, rng, social, logs) {
   const friends = ch.social.friends;
   if (ch.social.friendIntent && ch.age >= 6 && rng.chance(.35 + ch.stats.charisma / 300)) {
-    const friend = { id:`friend-${ch.age}-${friends.length}`, relation:'Friend', alive:true, sex:rng.chance(.5)?'male':'female', ageOffset:rng.int(-3,3), relationshipScore:55+rng.int(0,20), personality:traits(rng), yearsKnown:0, countryId:country.id };
+    const friend = { id:`friend-${ch.age}-${friends.length}`, relation:'Friend', alive:true, circle:'ordinary', sex:rng.chance(.5)?'male':'female', ageOffset:rng.int(-3,3), relationshipScore:55+rng.int(0,20), personality:traits(rng), yearsKnown:0, countryId:country.id };
     generateRelatedName(rng,country,friend,ch,{familyName:''});friends.push(friend); logs.push(`You became friends with ${displayName(friend)}.`);
   }
   ch.social.friendIntent = false;
-  for (const f of friends) {
-    if (!f.alive) continue;
+  const active=friends.filter(f=>f.alive&&!f.ended).sort((a,b)=>(b.relationshipScore||0)-(a.relationshipScore||0));
+  active.forEach((f,i)=>{f.circle=i<6&&f.relationshipScore>=58?'close':'ordinary';});
+  let attention=social?18:5;
+  for (const f of active) {
     f.yearsKnown = (f.yearsKnown || 0) + 1;
-    f.relationshipScore = clamp((f.relationshipScore || 50) + (social ? 4 : -2));
-    if (f.relationshipScore < 15 && rng.chance(.25)) { f.alive=false; f.ended=true; logs.push('A friendship faded after a long period of distance.'); }
+    const friendAge=Math.max(0,ch.age-(f.ageOffset||0));
+    const mortality=friendAge<50 ? .002 : friendAge<70 ? .008 : Math.min(.24,.018+(friendAge-70)*.009);
+    if(rng.chance(mortality)){f.alive=false;f.endReason='deceased';logs.push(`${displayName(f)} died at age ${friendAge}.`);continue;}
+    const share=attention>0?(f.circle==='close'?Math.min(4,attention):Math.min(1,attention)):0;attention-=share;
+    f.relationshipScore=clamp((f.relationshipScore||50)+(share?share:-2));
+    if(f.relationshipScore<20&&rng.chance(.35)){f.ended=true;f.circle='former';f.endReason='faded';logs.push(`Your friendship with ${displayName(f)} faded after a long period of distance.`);}
   }
-  if (!friends.some(f=>f.alive) && ch.age >= 12) ch.stats.happiness = clamp(ch.stats.happiness - 1);
+  if (!friends.some(f=>f.alive&&!f.ended) && ch.age >= 12) ch.stats.happiness = clamp(ch.stats.happiness - 1);
 }
 
 function resolveChildDevelopment(ch, p, country, rng, housing, logs) {

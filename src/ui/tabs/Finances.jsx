@@ -18,6 +18,7 @@ function Sparkline({ data }) {
 
 export default function Finances({ state, refresh }) {
   const ch = state.character, country = COUNTRY_BY_ID[ch.countryId], st = ch.lastStatement;
+  const [section,setSection]=useState('summary');
   const [amount, setAmount] = useState(Math.round(medianWage(country) * 0.1));
   const [transferAmount,setTransferAmount]=useState(Math.round(medianWage(country)*.05));
   const [budgetMode,setBudgetMode]=useState(ch.householdBudget?.mode||'proportional');
@@ -29,9 +30,12 @@ export default function Finances({ state, refresh }) {
   const homeDue = country.incomeTier >= 3 ? homePrice * 0.2 : homePrice;
   const transact = fn => { fn(); refresh(); };
 
-  return <div className="grid cols-2">
+  const sections=[['summary','Summary'],['accounts','Accounts'],['debt','Debt & Credit'],['assets','Assets & Goals'],['taxes','Taxes'],['statements','Statements']];
+  return <div className={`finance-page finance-${section}`}>
+    <div className="section-tabs" role="tablist" aria-label="Finance sections">{sections.map(([id,label])=><button key={id} className={section===id?'active':''} onClick={()=>setSection(id)}>{label}</button>)}</div>
+    <div className="grid cols-2">
     <div>
-      <div className="panel">
+      <div className="panel finance-card finance-summary">
         <h3>Accounts & Household</h3>
         <div className="kv"><span className="k">Personal cash</span><span className="v">{money(ch.money.cash)}</span></div>
         <div className="kv"><span className="k">Personal savings</span><span className="v">{money(ch.money.bank)}</span></div>
@@ -46,7 +50,7 @@ export default function Finances({ state, refresh }) {
         <div style={{ marginTop: 14 }}><div className="muted" style={{ fontSize: 12 }}>Net worth over time</div><Sparkline data={ch.netWorthHistory} /></div>
       </div>
 
-      <div className="panel" style={{ marginTop: 12 }}>
+      <div className="panel finance-card finance-accounts" style={{ marginTop: 12 }}>
         <h3>Currency & Banking</h3>
         <div className="kv"><span className="k">Local currency</span><span className="v">{country.currency}</span></div>
         <div className="kv"><span className="k">Annual exchange rate</span><span className="v">1 PPP dollar = {financial.exchangeRate.toFixed(financial.exchangeRate<10?2:0)} {financial.currencyCode}</span></div>
@@ -58,7 +62,7 @@ export default function Finances({ state, refresh }) {
         <p className="muted" style={{fontSize:11}}>PPP values preserve game balance; local currency uses the annual modeled rate. Migration and remittances apply an exchange fee.</p>
       </div>
 
-      {ch.spouse?.alive&&<div className="panel" style={{marginTop:12}}>
+      {ch.spouse?.alive&&<div className="panel finance-card finance-accounts" style={{marginTop:12}}>
         <h3>Spousal Budget</h3>
         <div className="kv"><span>Spouse personal savings</span><span>{money(ch.spouse.finances?.personalSavings||0)}</span></div>
         <div className="kv"><span>Current arrangement</span><span>{BUDGET_MODES[ch.householdBudget?.mode]?.label}</span></div>
@@ -70,23 +74,27 @@ export default function Finances({ state, refresh }) {
         <p className="muted" style={{fontSize:11}}>Your spouse keeps a personal account. A proposed change resolves next year according to the relationship and broad cultural context; the Religion phase will deepen those influences.</p>
       </div>}
 
-      <div className="panel" style={{marginTop:12}}>
-        <h3>Credit, Loans & Goals</h3>
+      <div className="panel finance-card finance-debt" style={{marginTop:12}}>
+        <h3>Debt & Credit</h3>
         <div className="kv"><span>Personal loan</span><span>{money(financial.personalLoan.balance)} · {(financial.personalLoan.rate*100).toFixed(1)}%</span></div>
         <div className="button-row"><button disabled={financial.personalLoan.balance>0||ch.age<18} onClick={()=>transact(()=>applyPersonalLoan(state))}>Apply for personal loan</button><button disabled={!financial.personalLoan.balance||ch.money.bank<=0} onClick={()=>transact(()=>payConsumerDebt(state,'personalLoan',transferAmount))}>Repay loan</button></div>
         <div className="kv"><span>Credit card</span><span>{financial.creditCard.open?`${money(financial.creditCard.balance)} / ${money(financial.creditCard.limit)} · ${(financial.creditCard.rate*100).toFixed(1)}%`:'Not open'}</span></div>
         <div className="button-row"><button disabled={financial.creditCard.open||ch.age<18} onClick={()=>transact(()=>applyCreditCard(state))}>Open credit card</button><button disabled={!financial.creditCard.open||financial.creditCard.balance+transferAmount>financial.creditCard.limit} onClick={()=>transact(()=>useCreditCard(state,transferAmount))}>Borrow on card</button><button disabled={!financial.creditCard.balance||ch.money.bank<=0} onClick={()=>transact(()=>payConsumerDebt(state,'creditCard',transferAmount))}>Repay card</button></div>
+      </div>
+
+      <div className="panel finance-card finance-assets" style={{marginTop:12}}>
+        <h3>Savings Goals</h3>
         {['emergency','housing','retirement'].map(key=>{const g=financialGoalProgress(ch,country,key);return <div className="subcard" key={key}><label className="kv"><span>{key[0].toUpperCase()+key.slice(1)} goal</span><input type="number" min="0" value={Math.round(g.target)} onChange={e=>{updateFinancialGoal(state,key,e.target.value);refresh();}} style={{width:120}}/></label><div className="muted">{money(g.held)} saved · {Math.round(g.pct)}%</div></div>})}
       </div>
 
-      <div className="panel" style={{marginTop:12}}>
+      <div className="panel finance-card finance-accounts" style={{marginTop:12}}>
         <h3>Family Remittances</h3>
         <select aria-label="Remittance recipient" value={remitPerson} onChange={e=>setRemitPerson(e.target.value)} style={{width:'100%'}}>{[...(ch.family||[]),...(ch.spouse?[ch.spouse]:[])].filter(p=>p.alive).map(p=><option key={p.id} value={p.id}>{displayName(p)} · {p.relation}</option>)}</select>
         <button style={{marginTop:8}} disabled={!remitPerson||ch.money.bank<transferAmount} onClick={()=>transact(()=>remitToFamily(state,remitPerson,transferAmount))}>Send {money(transferAmount)} plus exchange fee</button>
         {(financial.remittances||[]).slice(-3).reverse().map((x,i)=><div className="kv" key={`${x.age}-${i}`}><span>Age {x.age} · {x.to}</span><span>{money(x.amount)} + {money(x.fee)} fee</span></div>)}
       </div>
 
-      <div className="panel" style={{ marginTop: 12 }}>
+      <div className="panel finance-card finance-summary" style={{ marginTop: 12 }}>
         <h3>Family Economy</h3>
         <div className="kv"><span className="k">Family members employed</span><span className="v">{ch.householdFinance?.employed||0}</span></div>
         <div className="kv"><span className="k">Family earnings paid into household</span><span className="v">{money(ch.householdFinance?.familyGrossIncome||0)}</span></div>
@@ -97,7 +105,7 @@ export default function Finances({ state, refresh }) {
         <p className="muted" style={{fontSize:11}}>The annual statement lists each contributing family member and household-paid medical bill separately.</p>
       </div>
 
-      <div className="panel" style={{ marginTop: 12 }}>
+      <div className="panel finance-card finance-assets" style={{ marginTop: 12 }}>
         <h3>Investments</h3>
         <label className="muted" style={{ fontSize: 12 }}>Transaction amount <input type="number" min="1" value={amount} onChange={e => setAmount(Number(e.target.value))} style={{ width: 110, marginLeft: 8 }} /></label>
         {Object.entries(INVESTMENTS).map(([id, d]) => {
@@ -111,7 +119,7 @@ export default function Finances({ state, refresh }) {
         })}
       </div>
 
-      <div className="panel" style={{ marginTop: 12 }}>
+      <div className="panel finance-card finance-assets" style={{ marginTop: 12 }}>
         <h3>Housing</h3>
         <div className="kv"><span className="k">Current tenure</span><span className="v">{housingLabel(ch)}</span></div>
         {!ch.ownsHome && <div className="kv"><span className="k">Annual housing cost</span><span className="v">{money(annualHousingCost(country, ch))}</span></div>}
@@ -129,7 +137,7 @@ export default function Finances({ state, refresh }) {
     </div>
 
     <div>
-    <div className="panel">
+    <div className="panel finance-card finance-taxes">
       <h3>Tax Profile</h3>
       <div className="kv"><span>Income-tax system</span><span>{taxModel.system==='none'?'No personal income tax':taxModel.system==='flat'?'Flat income tax':'Progressive income tax'}</span></div>
       <div className="kv"><span>Spouse filing</span><span>{taxModel.filing}</span></div>
@@ -141,7 +149,7 @@ export default function Finances({ state, refresh }) {
       <p className="muted" style={{fontSize:11}}>Underreporting may reduce the current bill, but creates audit, penalty, criminal-case, and tax-debt risk. Tax rules are simplified simulation data.</p>
     </div>
 
-    <div className="panel" style={{marginTop:12}}>
+    <div className="panel finance-card finance-statements" style={{marginTop:12}}>
       <h3>Last Year's Financial Statement {st ? `(age ${st.age})` : ''}</h3>
       {!st ? <div className="muted">No statement yet — advance a year.</div> : <>
         {st.income.length > 0 && <div className="muted" style={{ fontSize: 12 }}>INCOME</div>}
@@ -172,6 +180,7 @@ export default function Finances({ state, refresh }) {
           <div className="kv"><strong>Total net this year</strong><span style={{ color: st.net >= 0 ? 'var(--good)' : 'var(--bad)' }}>{st.net >= 0 ? '+' : ''}{money(st.net)}</span></div>
         </div>
       </>}
+    </div>
     </div>
     </div>
   </div>;

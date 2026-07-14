@@ -3,7 +3,7 @@
 import { COUNTRY_BY_ID } from './countries.js';
 import { enroll, canEnrollUniversity, canEnrollVocational } from './education.js';
 import { enlistVoluntary, canEnlistVoluntary } from './military.js';
-import { wageFor } from './jobs.js';
+import { wageFor, recordCareerEvent } from './jobs.js';
 import { needsHusbandWorkApproval } from './genderRights.js';
 import { laborProfile } from './labor.js';
 import { INVESTMENTS } from './investments.js';
@@ -12,7 +12,7 @@ import { submitMigration, naturalize, isIrregular, visaWorkFraction } from './im
 import { clearPlannedCrime, planCrime } from './judicial.js';
 import { applyForSocialHousing, chooseHousing, homePrice, setChildContributionPolicy } from './housing.js';
 import { marriageNameChoices, requestLegalNameChange, setChildName } from './names.js';
-import { drawCredit, openCreditCard, recordInvestmentSale, repayConsumerDebt, requestBudgetChange, sendRemittance, setFinancialGoal, setTaxCompliance, setTaxFilingChoice, takePersonalLoan, transferBetweenAccounts } from './financialSystems.js';
+import { bankProfile, drawCredit, openCreditCard, recordInvestmentSale, repayConsumerDebt, requestBudgetChange, sendRemittance, setFinancialGoal, setTaxCompliance, setTaxFilingChoice, takePersonalLoan, transferBetweenAccounts } from './financialSystems.js';
 
 export function setActivities(state, ids) { state.character.selectedActivities = ids; }
 export function setLifestyle(state, ls) { state.character.lifestyle = ls; }
@@ -29,6 +29,7 @@ export function setJobSearch(state, sectorKey) {
   const ch = state.character;
   if (ch.employmentStatus === 'prison') return false;
   const country = COUNTRY_BY_ID[ch.countryId];
+  if(ch.education?.enrolled&&['university','vocational'].includes(ch.education.stage))return false;
   if (isIrregular(ch) && sectorKey !== 'informal') return false;
   if (needsHusbandWorkApproval(ch, country)) return false;
   if (['unemployed', 'informal', 'retired'].includes(ch.employmentStatus) || !ch.job) {
@@ -77,7 +78,7 @@ export function applyForCitizenship(state){return naturalize(state.character);}
 export function setPartTimeWork(state,enabled){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId];if(ch.age>=laborProfile(c).lightWorkAge&&ch.age<18){ch.partTimeWork=enabled;return true;}if(ch.age>=18&&ch.employmentStatus==='student'&&ch.immigration?.residence?.visa?.kind==='student'&&visaWorkFraction(ch)>0){ch.partTimeWork=enabled;return true;}return false;}
 export function buyInvestment(state,id,amount){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId],d=INVESTMENTS[id];amount=Math.max(0,Number(amount)||0);if(!d||amount<=0||!d.gate(c,ch)||ch.money.bank<amount)return false;ch.money.bank-=amount;ch.investments[id]=(ch.investments[id]||0)+amount;ch.investmentBasis||={};ch.investmentBasis[id]=(ch.investmentBasis[id]||0)+amount;return true;}
 export function sellInvestment(state,id,amount){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId],d=INVESTMENTS[id];if(!d||d.locked&&ch.age<65)return false;const held=ch.investments[id]||0;amount=Math.min(held,Math.max(0,Number(amount)||0));if(amount<=0)return false;ch.investmentBasis||={};const basis=(ch.investmentBasis[id]||held)*(amount/held);ch.investmentBasis[id]=Math.max(0,(ch.investmentBasis[id]||held)-basis);ch.investments[id]-=amount;ch.money.bank+=amount;recordInvestmentSale(ch,c,id,amount,basis);return true;}
-export function buyHome(state){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId],price=homePrice(c,ch),down=c.incomeTier>=3?price*.2:price;if(ch.ownsHome||ch.age<18||ch.money.bank<down)return false;ch.money.bank-=down;ch.debts.mortgage=price-down;ch.homeValue=price;ch.ownsHome=true;ch.housing.tenure='owner';ch.housing.application=null;return true;}
+export function buyHome(state){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId],price=homePrice(c,ch),down=c.incomeTier>=3?price*.2:price;if(ch.ownsHome||ch.age<18||ch.money.bank<down)return false;ch.money.bank-=down;ch.debts.mortgage=price-down;if(ch.debts.mortgage>0){const termYears=c.incomeTier>=3?30:15;ch.mortgage={rate:bankProfile(c).loanRate*.65,termYears,remainingYears:termYears,originalPrincipal:ch.debts.mortgage};}ch.homeValue=price;ch.ownsHome=true;ch.housing.tenure='owner';ch.housing.application=null;return true;}
 export function foundBusiness(state,type){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId];if(!['informal','registered'].includes(type))return false;const capital=medianWage(c)*(type==='informal'?.5:5);if(ch.age<18||ch.business||ch.money.bank<capital)return false;ch.money.bank-=capital;ch.business={type,capital,employees:0,loan:0,lastProfit:0,lastRevenue:0,lastWages:0,lastInterest:0};return true;}
 export function hireEmployee(state){const ch=state.character;if(!ch.business)return false;ch.business.employees+=1;return true;}
 export function takeBusinessLoan(state){const ch=state.character,c=COUNTRY_BY_ID[ch.countryId];if(!ch.business||c.incomeTier<2)return false;const a=medianWage(c)*2;ch.business.loan+=a;ch.business.capital+=a;return true;}
@@ -96,7 +97,8 @@ export function filePersonalBankruptcy(state){const ch=state.character,c=COUNTRY
 
 export function quitJob(state) {
   const ch = state.character, country = COUNTRY_BY_ID[ch.countryId];
-  if (ch.job) { ch.benefits.lastWage = wageFor(country, ch.job, ch); ch.job = null; ch.employmentStatus = 'unemployed'; }
+  if (ch.job) { ch.benefits.lastWage = wageFor(country, ch.job, ch); recordCareerEvent(ch,'left',ch.job,'Resigned'); ch.job = null; ch.employmentStatus = 'unemployed'; return true; }
+  return false;
 }
 
 export function enrollUniversity(state, useLoan = false) {

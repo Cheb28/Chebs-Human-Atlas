@@ -176,6 +176,62 @@ balance; spouses retain personal funds; loans, remittances, investments, migrati
 goals, bankruptcy, estate exemptions, and tax statements survive saves; every annual financial
 statement balances; the complete regression suite and production build pass.
 
+## Phase 10.3.1 — Full-Life Corrections, Career Variety, and Screen Organization
+
+**Status: complete.** This focused correction and expansion pass was based on repeated complete-life
+playtests and was completed before Phase 10.4.
+
+1. Correct false tax-evasion audits so honest individual and joint filers are never penalized for a
+   legal filing calculation.
+2. Stop exponential business wealth, separate retained business earnings from owner income, and add
+   realistic revenue, operating-cost, market-demand, tax, and failure limits.
+3. Reconcile university, employment, and military states. Full-time education must pause, defer, or
+   explicitly become part-time during military service or full-time work.
+4. Rebalance promotion and management progression using qualifications, performance, experience,
+   vacancies, employer size, economic conditions, and possible demotion or job changes.
+5. Replace percentage-of-balance mortgages with country-sensitive interest and a modeled repayment
+   term so ordinary mortgages normally conclude within 15–30 years.
+6. Organize friendships into a limited close circle, ordinary friends, and faded/former friendships;
+   social time must be distributed rather than improving every relationship simultaneously.
+7. Reorganize Finance with internal sections for Summary, Accounts, Debt & Credit, Assets & Goals,
+   Taxes, and Statements. Only one internal section is displayed at a time.
+8. Reorganize Career initially into Current Position, Find Work, Career History, and Qualifications.
+   Workplace and Retirement sections remain reserved for the deeper Phase 11 employment systems.
+9. Expand civilian career variety with country-sensitive availability, pay, qualifications, risks,
+   and progression paths in the following approved groups:
+   - Agriculture: farm labor, farming, livestock, plantation work, and farm supervision.
+   - Construction: labor, carpentry, electrical work, plumbing, and site management.
+   - Manufacturing: factory work, machine operation, technical work, quality inspection, and management.
+   - Retail and hospitality: cashiering, shop work, cooking, hotels, and restaurant management.
+   - Office and administration: reception, administrative work, accounting, human resources, and management.
+   - Education: teaching assistance, primary and secondary teaching, university teaching, and school leadership.
+   - Healthcare: care work, nursing assistance, nursing, pharmacy, and medicine.
+   - Technology: IT support, programming, systems administration, engineering, and technology management.
+   - Government: clerical work, postal work, civil service, diplomacy, and senior administration.
+   - Public safety: security, policing, firefighting, investigation, and command.
+   - Law: paralegal work, legal practice, prosecution, judging, and senior judicial work.
+   - Media and creative work: journalism, photography, design, writing, and editing.
+   - Informal work: street vending, domestic work, waste collection, day labor, and informal repair.
+10. Run full-life regression and browser tests across multiple countries, education paths, family
+    structures, businesses, migrations, disabilities, legal outcomes, and financial profiles.
+
+**Explicitly deferred:** transportation careers and religious careers are not part of Phase 10.3.1.
+Transportation belongs with a later transportation/commuting expansion; religious careers remain in
+Phase 10.4 after the religion and qualification systems are implemented.
+
+**Save-compatibility rule during active development:** updates may intentionally break saves created
+by earlier versions. Do not build save-conversion or migration work for future phases unless the owner
+explicitly asks to restore backward compatibility. Current-version saving and resuming should still
+work normally.
+
+**Verified:** honest separate and joint filing no longer creates false evasion; owner draws and
+retained business value remain separate and bounded; study pauses during service; mortgages
+amortize to a fixed term; close friendship circles remain limited; 13 specific civilian career
+families provide more than 50 career levels with qualification, citizenship, health, language,
+risk, hiring, layoff, and slower promotion rules. Finance and Career now open into focused internal
+sections. The dedicated Phase 10.3.1 regression checks, complete legacy suite, and production build
+pass.
+
 ## Phase 10.4 — Religion, Belief, Charity, and Religious Legacy
 
 **Status: planned.** Add a Religion tab. Keep public religious identity, private belief, observance,

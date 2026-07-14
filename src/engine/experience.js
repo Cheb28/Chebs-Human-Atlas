@@ -1,4 +1,4 @@
-const SECTORS=['informal','service','industrial','professional'];
+const SECTORS=['agriculture','construction','manufacturing','retail_hospitality','office_admin','education','healthcare','technology','government','public_safety','law','media_creative','informal','service','industrial','professional'];
 
 export function initExperience(){
   return{sectors:Object.fromEntries(SECTORS.map(k=>[k,0])),managementYears:0,businessYears:0,
@@ -30,12 +30,13 @@ export function sectorYears(ch,sector){return ensureExperience(ch).sectors[secto
 export function vocationalYears(ch){const x=ensureExperience(ch);return (x.training.vocational||0)+sectorYears(ch,'industrial');}
 export function relevantExperience(ch,sector){
   if(sector==='professional')return sectorYears(ch,'professional');
-  if(sector==='industrial')return vocationalYears(ch);
+  if(['industrial','construction','manufacturing'].includes(sector))return vocationalYears(ch)+sectorYears(ch,sector);
+  if(sector==='office_admin')return sectorYears(ch,sector)+sectorYears(ch,'service')*.5;
   return sectorYears(ch,sector);
 }
-export function recordWorkYear(ch,sector,rung=0){
+export function recordWorkYear(ch,sector,rung=0,managementFrom=Infinity){
   const x=ensureExperience(ch);x.sectors[sector]=(x.sectors[sector]||0)+1;
-  if((sector==='professional'&&rung>=1)||(['service','industrial','informal'].includes(sector)&&rung>=2))x.managementYears+=1;
+  if(rung>=managementFrom)x.managementYears+=1;
 }
 export function addTrainingYear(ch,kind){const x=ensureExperience(ch);x.training[kind]=(x.training[kind]||0)+1;}
 export function addCivicYear(ch){ensureExperience(ch).civicYears+=1;}

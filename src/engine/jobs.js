@@ -1,4 +1,4 @@
-// Jobs & income (GAME_DESIGN section 6).
+// Career families, entry requirements, pay, risk, and progression.
 import { medianWage } from './countries.js';
 import { genderRightsProfile, needsHusbandWorkApproval } from './genderRights.js';
 import { healthWorkCapacity } from './health.js';
@@ -7,154 +7,84 @@ import { workLanguageMultiplier } from './language.js';
 import { recordPenalty } from './judicial.js';
 import { relevantExperience, recordWorkYear, sectorYears, vocationalYears } from './experience.js';
 
-// Sector ladders: each rung has title, wage multiplier vs median wage, and a
-// gate(ch) predicate for reaching that rung.
-export const SECTORS = {
-  informal: {
-    label: 'Informal / Agricultural',
-    rungs: [
-      { title: 'Laborer', mult: 0.4, gate: () => true },
-      { title: 'Farmhand / Hawker', mult: 0.6, gate: (ch) => sectorYears(ch,'informal')>=2 },
-      { title: 'Foreman', mult: 0.9, gate: (ch) => sectorYears(ch,'informal')>=5 },
-    ],
-  },
-  service: {
-    label: 'Service',
-    rungs: [
-      { title: 'Shop clerk', mult: 0.7, gate: (ch) => hasSecondary(ch) },
-      { title: 'Office worker', mult: 1.0, gate: (ch) => hasSecondary(ch) && sectorYears(ch,'service')>=2 },
-      { title: 'Manager', mult: 1.8, gate: (ch) => sectorYears(ch,'service')>=5 && ch.stats.charisma >= 50 },
-      { title: 'Executive', mult: 3.5, gate: (ch) => sectorYears(ch,'service')>=10 && ch.experience.managementYears>=2 && ch.stats.charisma >= 65 },
-    ],
-  },
-  industrial: {
-    label: 'Industrial / Trades',
-    rungs: [
-      { title: 'Apprentice', mult: 0.6, gate: () => true },
-      { title: 'Tradesman', mult: 1.1, gate: (ch) => vocationalYears(ch)>=3 },
-      { title: 'Master / Site boss', mult: 2.0, gate: (ch) => vocationalYears(ch)>=7 },
-    ],
-  },
-  professional: {
-    label: 'Professional',
-    rungs: [
-      { title: 'Junior', mult: 1.5, gate: (ch) => ch.education.degree },
-      { title: 'Senior', mult: 2.5, gate: (ch) => ch.education.degree && sectorYears(ch,'professional')>=4 },
-      { title: 'Partner / Chief', mult: 5.0, gate: (ch) => ch.education.degree && sectorYears(ch,'professional')>=10 && ch.experience.managementYears>=2 && ch.stats.charisma >= 60 },
-    ],
-  },
+function secondary(ch){return ['secondary_done','graduated'].includes(ch.education?.stage)||!!ch.education?.degree||!!ch.education?.vocational;}
+function degree(ch){return !!ch.education?.degree;}
+function vocational(ch){return !!ch.education?.vocational||vocationalYears(ch)>=2;}
+const y=(sector,n)=>(ch)=>sectorYears(ch,sector)>=n;
+const yd=(sector,n)=>(ch)=>degree(ch)&&sectorYears(ch,sector)>=n;
+const rung=(title,mult,gate=()=>true,risk=.01)=>({title,mult,gate,risk});
+
+export const SECTORS={
+  agriculture:{label:'Agriculture',managementFrom:3,rungs:[rung('Farm laborer',.48),rung('Farm worker',.68,y('agriculture',2),.025),rung('Skilled grower',.95,y('agriculture',5),.02),rung('Farm supervisor',1.35,y('agriculture',9),.015)]},
+  construction:{label:'Construction',managementFrom:3,rungs:[rung('Construction helper',.62,()=>true,.04),rung('Apprentice craft worker',.82,y('construction',2),.035),rung('Qualified craft worker',1.25,ch=>vocational(ch)&&sectorYears(ch,'construction')>=4,.03),rung('Site supervisor',1.65,y('construction',9),.025)]},
+  manufacturing:{label:'Manufacturing',managementFrom:3,rungs:[rung('Production worker',.7,()=>true,.035),rung('Machine operator',.9,y('manufacturing',2),.03),rung('Senior technician',1.2,ch=>vocational(ch)&&sectorYears(ch,'manufacturing')>=5,.025),rung('Production supervisor',1.55,y('manufacturing',10),.02)]},
+  retail_hospitality:{label:'Retail & Hospitality',managementFrom:3,rungs:[rung('Service crew',.62),rung('Experienced associate',.78,y('retail_hospitality',2)),rung('Team lead',1.0,y('retail_hospitality',5)),rung('Store or venue manager',1.45,y('retail_hospitality',10))]},
+  office_admin:{label:'Office & Administration',managementFrom:3,rungs:[rung('Administrative assistant',.82,ch=>secondary(ch)),rung('Coordinator',1.0,y('office_admin',3)),rung('Senior administrator',1.25,y('office_admin',7)),rung('Administration manager',1.65,y('office_admin',12))]},
+  education:{label:'Education',managementFrom:3,rungs:[rung('Teaching assistant',.78,ch=>secondary(ch)),rung('Teacher',1.25,ch=>degree(ch)||ch.education?.vocational),rung('Senior teacher',1.55,yd('education',6)),rung('School administrator',2.0,yd('education',12))]},
+  healthcare:{label:'Healthcare',managementFrom:3,rungs:[rung('Care aide',.75,ch=>secondary(ch),.025),rung('Licensed health worker',1.35,ch=>degree(ch)||vocational(ch),.025),rung('Senior clinician',2.25,yd('healthcare',7),.02),rung('Clinical director',3.1,yd('healthcare',14),.015)]},
+  technology:{label:'Technology',managementFrom:3,rungs:[rung('Technical support worker',.95,ch=>secondary(ch)),rung('Developer or analyst',1.55,ch=>degree(ch)||vocational(ch)),rung('Senior technical specialist',2.25,ch=>sectorYears(ch,'technology')>=6&&(degree(ch)||vocational(ch))),rung('Technology manager',3.0,yd('technology',12))]},
+  government:{label:'Government & Civil Service',managementFrom:3,citizen:true,rungs:[rung('Public service assistant',.82,ch=>secondary(ch)),rung('Civil servant',1.15,ch=>secondary(ch)&&sectorYears(ch,'government')>=3),rung('Senior civil servant',1.55,y('government',8)),rung('Department manager',2.1,y('government',14))]},
+  public_safety:{label:'Public Safety',managementFrom:3,citizen:true,rungs:[rung('Public safety recruit',.9,ch=>secondary(ch),.04),rung('Public safety officer',1.2,y('public_safety',3),.04),rung('Senior officer',1.55,y('public_safety',8),.035),rung('Command officer',2.05,y('public_safety',14),.025)]},
+  law:{label:'Law',managementFrom:3,citizen:true,rungs:[rung('Legal assistant',.9,ch=>secondary(ch)),rung('Lawyer',1.85,ch=>degree(ch)),rung('Senior lawyer',2.8,yd('law',7)),rung('Partner or judge',4.0,ch=>degree(ch)&&sectorYears(ch,'law')>=15)]},
+  media_creative:{label:'Media & Creative',managementFrom:3,rungs:[rung('Creative assistant',.68,ch=>secondary(ch)),rung('Creator or reporter',1.0,y('media_creative',2)),rung('Senior creative professional',1.55,y('media_creative',7)),rung('Editor or creative director',2.2,y('media_creative',13))]},
+  informal:{label:'Informal Work',managementFrom:99,rungs:[rung('Casual laborer',.4),rung('Experienced informal worker',.58,y('informal',3),.025),rung('Independent vendor',.78,y('informal',8),.02)]},
+  // Kept for old generated lives and historical records, but no longer offered.
+  service:{label:'General Service (legacy)',legacy:true,managementFrom:2,rungs:[rung('Shop clerk',.7,ch=>secondary(ch)),rung('Office worker',1,y('service',2)),rung('Manager',1.6,y('service',7))]},
+  industrial:{label:'Industrial Trades (legacy)',legacy:true,managementFrom:2,rungs:[rung('Apprentice',.6),rung('Tradesperson',1.1,ch=>vocational(ch)),rung('Site boss',1.8,y('industrial',9))]},
+  professional:{label:'Professional (legacy)',legacy:true,managementFrom:2,rungs:[rung('Junior professional',1.5,ch=>degree(ch)),rung('Senior professional',2.3,yd('professional',5)),rung('Partner or chief',3.5,yd('professional',13))]},
 };
 
-function hasSecondary(ch) {
-  return ['secondary_done', 'graduated'].includes(ch.education.stage) || ch.education.degree || ch.education.vocational;
+export const RETIREMENT_AGE=65;
+
+function entryReason(ch,country,key,sec){
+  if(sec.legacy)return 'This broad legacy category has been replaced by specific careers.';
+  if(ch.employmentStatus==='prison')return 'Unavailable while imprisoned.';
+  if(isIrregular(ch)&&key!=='informal')return 'Legal work status is required.';
+  const visa=ch.immigration?.residence?.visa;
+  if(visa?.employerTied&&visa.employerSector&&key!==visa.employerSector)return 'Your visa is tied to another field.';
+  if(sec.citizen&&!(ch.immigration?.citizenships||[ch.countryId]).includes(country.id))return 'Local citizenship is required.';
+  if(!sec.rungs[0].gate(ch))return key==='healthcare'||key==='education'||key==='technology'||key==='law'?'A relevant qualification is required.':'Finish secondary school or gain the required training.';
+  return null;
 }
 
-export const RETIREMENT_AGE = 65;
+export function careerOptions(ch,country){return Object.entries(SECTORS).filter(([,s])=>!s.legacy).map(([key,sec])=>({key,label:sec.label,entryTitle:sec.rungs[0].title,risk:sec.rungs[0].risk,reason:entryReason(ch,country,key,sec),eligible:!entryReason(ch,country,key,sec)}));}
+export function eligibleSectors(ch,country={id:ch.countryId}){return careerOptions(ch,country).filter(x=>x.eligible);}
 
-// Which sectors can the player currently enter at the bottom rung?
-export function eligibleSectors(ch) {
-  if (ch.employmentStatus === 'prison') return [];
-  const out = [];
-  for (const [key, sec] of Object.entries(SECTORS)) {
-    if (isIrregular(ch) && key !== 'informal') continue;
-    const visa=ch.immigration?.residence?.visa;
-    if(visa?.employerTied&&visa.employerSector&&key!==visa.employerSector)continue;
-    if (sec.rungs[0].gate(ch)) out.push({ key, label: sec.label, entryTitle: sec.rungs[0].title });
+export function wageFor(country,job,ch=null){if(!job)return 0;const sec=SECTORS[job.sector],r=sec?.rungs[job.rung];return sec&&r?medianWage(country)*r.mult*workLanguageMultiplier(ch,country):0;}
+export function jobTitle(job){if(!job)return null;const sec=SECTORS[job.sector],r=sec?.rungs[job.rung];return r?`${r.title} (${sec.label})`:'Unknown occupation';}
+export function recordCareerEvent(ch,type,job,note=''){if(!job)return;ch.careerHistory||=[];const title=SECTORS[job.sector]?.rungs[job.rung]?.title||job.sector;ch.careerHistory.push({age:ch.age,type,sector:job.sector,title,note});if(ch.careerHistory.length>80)ch.careerHistory.shift();}
+
+export function attemptHire(ch,country,sectorKey,rng,{firstJob=false}={}){
+  const sec=SECTORS[sectorKey],reason=sec&&entryReason(ch,country,sectorKey,sec);
+  if(!sec||reason)return{hired:false,log:reason||'That career does not exist.'};
+  if(needsHusbandWorkApproval(ch,country))return{hired:false,log:'Your household’s legal restrictions prevented you from taking paid work.'};
+  const unemp=(firstJob?(country.youthUnemployment??country.unemployment*2):country.unemployment)/100;
+  const credentialBonus=degree(ch) ? .12 : ch.education?.vocational ? .08 : secondary(ch) ? .04 : 0;
+  const margin=Math.min(.28,relevantExperience(ch,sectorKey)*.025)+credentialBonus+(ch.veteran?.05:0);
+  const rights=ch.sex==='female'?genderRightsProfile(country).femaleHireMult:1;
+  const capacity=healthWorkCapacity(ch,sectorKey),healthMult=Math.max(.35,1-(1-capacity)*(country.lawTier==='strong'?.35:country.lawTier==='medium'?.65:1));
+  const p=Math.max(.03,Math.min(.9,(.68-unemp+margin-demographicHiringPenalty(ch,country)-recordPenalty(ch,sectorKey))*rights*healthMult));
+  if(!rng.chance(p))return{hired:false,log:'Job search unsuccessful this year.'};
+  ch.job={sector:sectorKey,rung:0,yearsAtRung:0};ch.employmentStatus=sectorKey==='informal'?'informal':'employed';
+  const visa=ch.immigration?.residence?.visa;if(visa?.employerTied&&!visa.employerSector)visa.employerSector=sectorKey;
+  recordCareerEvent(ch,'hired',ch.job);return{hired:true,log:`Hired as ${sec.rungs[0].title} (${sec.label}).`};
+}
+
+function demographicHiringPenalty(ch,country){const minority=(list,value)=>{const m=(list||[]).find(x=>x.name===value);return m&&m.pct<10 ? .025 : 0;};return Math.min(.05,minority(country.ethnicGroups,ch.ethnicity)+minority(country.religions,ch.religion));}
+
+export function resolveEmployment(ch,country,rng,{layoffMult=1}={}){
+  const log=[],job=ch.job;if(!job)return log;const sec=SECTORS[job.sector];if(!sec)return log;
+  job.yearsAtRung++;recordWorkYear(ch,job.sector,job.rung,sec.managementFrom);const capacity=healthWorkCapacity(ch,job.sector);
+  const leave=(type,text)=>{recordCareerEvent(ch,type,job,text);ch.benefits||={};ch.benefits.lastWage=wageFor(country,job,ch);ch.job=null;ch.employmentStatus='unemployed';ch.benefits.unemploymentYearsLeft=-1;log.push(text);};
+  if(capacity<.45&&rng.chance((.45-capacity)*.35)){leave('health departure',`Health limitations forced you to leave ${sec.rungs[job.rung].title}.`);return log;}
+  const injuryRisk=(sec.rungs[job.rung].risk||.01)*(1-Math.max(.25,capacity));if(rng.chance(injuryRisk)){ch.stats.health=Math.max(0,ch.stats.health-rng.int(2,8));log.push(`A workplace injury affected your health in ${sec.label}.`);}
+  if(rng.chance(.025*layoffMult)){leave('laid off',`Laid off from ${sec.rungs[job.rung].title}.`);return log;}
+  if(job.rung>0&&layoffMult>1&&rng.chance(.015*layoffMult)){
+    job.rung--;job.yearsAtRung=0;recordCareerEvent(ch,'demoted',job,'Economic restructuring');log.push(`Economic restructuring moved you to ${sec.rungs[job.rung].title}.`);return log;
   }
-  // professional entry needs a degree; if not eligible it won't show
-  return out;
-}
-
-// Annual gross wage for a job.
-export function wageFor(country, job, ch = null) {
-  if (!job) return 0;
-  const sec = SECTORS[job.sector];
-  const rung = sec.rungs[job.rung];
-  const languageMult = workLanguageMultiplier(ch,country);
-  return medianWage(country) * rung.mult * languageMult;
-}
-
-export function jobTitle(job) {
-  if (!job) return null;
-  return `${SECTORS[job.sector].rungs[job.rung].title} (${SECTORS[job.sector].label})`;
-}
-
-// Attempt to get hired into a sector at entry rung. Returns {hired, log}.
-export function attemptHire(ch, country, sectorKey, rng, { firstJob = false } = {}) {
-  const sec = SECTORS[sectorKey];
-  if (isIrregular(ch) && sectorKey !== 'informal') return { hired: false, log: 'Without legal work status, only informal work is available.' };
-  if (!sec || !sec.rungs[0].gate(ch)) return { hired: false, log: `Not qualified for ${sec ? sec.label : 'that sector'} yet.` };
-  if (needsHusbandWorkApproval(ch, country)) return { hired: false, log: 'Your household’s legal restrictions prevented you from taking paid work.' };
-  const unemp = (firstJob ? (country.youthUnemployment ?? country.unemployment * 2) : country.unemployment) / 100;
-  const credentialBonus=(ch.education.degree?.12:ch.education.vocational?.08:hasSecondary(ch)?.04:0);
-  const experienceMargin=Math.min(.35,relevantExperience(ch,sectorKey)*.035)+credentialBonus;
-  const veteranBonus = ch.veteran ? 0.05 : 0;
-  const demographicPenalty = demographicHiringPenalty(ch, country);
-  const rightsMult = ch.sex === 'female' ? genderRightsProfile(country).femaleHireMult : 1;
-  const capacity = healthWorkCapacity(ch, sectorKey);
-  const accommodation = country.lawTier === 'strong' ? 0.35 : country.lawTier === 'medium' ? 0.65 : 1;
-  const healthMult = Math.max(0.35, 1 - (1 - capacity) * accommodation);
-  const criminalPenalty = recordPenalty(ch, sectorKey);
-  const p = Math.max(0.03, Math.min(0.95, (0.70 - unemp + experienceMargin + veteranBonus - demographicPenalty - criminalPenalty) * rightsMult * healthMult));
-  if (rng.chance(p)) {
-    ch.job = { sector: sectorKey, rung: 0, yearsAtRung: 0 };
-    ch.employmentStatus = sectorKey === 'informal' ? 'informal' : 'employed';
-    const visa=ch.immigration?.residence?.visa;
-    if(visa?.employerTied&&!visa.employerSector)visa.employerSector=sectorKey;
-    return { hired: true, log: `Hired as ${sec.rungs[0].title} (${sec.label}).` };
-  }
-  return { hired: false, log: `Job search unsuccessful this year.` };
-}
-
-// Keep the design's discrimination effect subtle: at most five percentage
-// points when a known ethnicity or religion is a small local minority.
-function demographicHiringPenalty(ch, country) {
-  const minority = (list, value) => {
-    const match = (list || []).find(x => x.name === value);
-    return match && match.pct < 10 ? 0.025 : 0;
-  };
-  return Math.min(0.05, minority(country.ethnicGroups, ch.ethnicity) + minority(country.religions, ch.religion));
-}
-
-// Yearly on-the-job resolution: promotion, layoff. Returns log lines.
-export function resolveEmployment(ch, country, rng, { layoffMult = 1 } = {}) {
-  const log = [];
-  const job = ch.job;
-  if (!job) return log;
-  job.yearsAtRung += 1;
-  recordWorkYear(ch,job.sector,job.rung);
-  const capacity = healthWorkCapacity(ch, job.sector);
-
-  if (capacity < 0.45 && rng.chance((0.45 - capacity) * 0.35)) {
-    ch.benefits.lastWage = wageFor(country, job, ch);
-    ch.job = null;
-    ch.employmentStatus = 'unemployed';
-    ch.benefits.unemploymentYearsLeft = -1;
-    log.push(`Health limitations forced you to leave ${SECTORS[job.sector].rungs[job.rung].title}.`);
-    return log;
-  }
-
-  // Layoff (3%/yr; doubled during a recession).
-  if (rng.chance(0.03 * layoffMult)) {
-    ch.benefits = ch.benefits || {};
-    ch.benefits.lastWage = wageFor(country, job, ch);
-    ch.job = null;
-    ch.employmentStatus = 'unemployed';
-    ch.benefits.unemploymentYearsLeft = -1; // set on next-year situation
-    log.push(`Laid off from ${SECTORS[job.sector].rungs[job.rung].title}.`);
-    return log;
-  }
-
-  // Promotion if next rung's gate is met.
-  const sec = SECTORS[job.sector];
-  const next = sec.rungs[job.rung + 1];
-  if(ch.immigration?.residence?.visa?.temporaryJobsOnly)return log;
-  if (next && next.gate(ch)) {
-    const p = Math.max(0.02, (0.20 + ch.stats.charisma / 200 - recordPenalty(ch, job.sector) * 0.5) * Math.max(0.5, capacity));
-    if (rng.chance(p)) {
-      job.rung += 1; job.yearsAtRung = 0;
-      log.push(`Promoted to ${next.title}.`);
-    }
-  }
+  const next=sec.rungs[job.rung+1];if(ch.immigration?.residence?.visa?.temporaryJobsOnly||!next||!next.gate(ch)||job.yearsAtRung<3)return log;
+  const economy=Math.max(.55,Math.min(1.15,1-(country.unemployment||7)/100+(country.gdpGrowth||2)/100));
+  const vacancy=.55/(1+job.rung*.65),merit=Math.min(.15,(ch.stats.charisma-45)/500+relevantExperience(ch,job.sector)/300),p=Math.max(.025,Math.min(.22,(.07+merit)*vacancy*economy*Math.max(.5,capacity)));
+  if(rng.chance(p)){job.rung++;job.yearsAtRung=0;recordCareerEvent(ch,'promoted',job);log.push(`Promoted to ${next.title}.`);}
   return log;
 }

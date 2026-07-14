@@ -38,6 +38,11 @@ export function resolveEducation(ch, country, rng) {
   ed.performance ??= 50;ed.schoolYearsCompleted??=0;
   const age = ch.age;
   const rights = genderRightsProfile(country);
+  if(['serving','career'].includes(ch.military?.status)){
+    if(ed.enrolled){ed.paused=true;ed._tuitionDue=false;log.push('Military service paused your education this year.');}
+    return log;
+  }
+  if(ed.paused){ed.paused=false;if(ed.enrolled)ch.employmentStatus='student';}
   if (ch.employmentStatus === 'prison') {
     if (ed.enrolled) log.push('Imprisonment interrupted your education this year.');
     return log;
@@ -150,6 +155,7 @@ export function enroll(ch, country, kind, { useLoan = false } = {}) {
   ch.education.enrolled = true;
   ch.education.yearsInHigher = 0;
   ch.employmentStatus = 'student';
+  ch.education.paused=false;
   // clear any current job
   ch.job = null;
   if (kind === 'university') {

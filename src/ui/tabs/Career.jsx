@@ -1,73 +1,39 @@
+import { useState } from 'react';
 import { COUNTRY_BY_ID } from '../../engine/countries.js';
-import { eligibleSectors, jobTitle, wageFor, SECTORS } from '../../engine/jobs.js';
+import { careerOptions, jobTitle, wageFor, SECTORS } from '../../engine/jobs.js';
+import { experienceSummary } from '../../engine/experience.js';
 import { canEnlistVoluntary, careerTitle, careerWage } from '../../engine/military.js';
 import { setJobSearch, quitJob, enlistMilitary } from '../../engine/actions.js';
 import { money, titleCase } from '../format.js';
 
-export default function Career({ state, refresh }) {
-  const ch = state.character;
-  const country = COUNTRY_BY_ID[ch.countryId];
-  const sectors = eligibleSectors(ch);
+const TABS=[['current','Current'],['find','Find Work'],['history','History'],['qualifications','Qualifications']];
 
-  const isMinor = ch.age < 16;
-  const isStudent = ch.employmentStatus === 'student';
-  const isMilitary = ch.military.status === 'career' || ch.military.status === 'serving';
-  const isPrison = ch.employmentStatus === 'prison';
+export default function Career({state,refresh}){
+  const ch=state.character,country=COUNTRY_BY_ID[ch.countryId],[section,setSection]=useState('current');
+  const options=careerOptions(ch,country),isMinor=ch.age<16,isStudent=ch.education?.enrolled&&['university','vocational'].includes(ch.education.stage);
+  const isMilitary=['career','serving'].includes(ch.military.status),isPrison=ch.employmentStatus==='prison';
+  return <div>
+    <div className="section-tabs" role="tablist" aria-label="Career sections">{TABS.map(([id,label])=><button key={id} className={section===id?'active':''} onClick={()=>setSection(id)}>{label}</button>)}</div>
 
-  return (
-    <div className="grid cols-2">
-      <div className="panel">
-        <h3>Current Situation</h3>
-        <div className="kv"><span className="k">Status</span><span className="v">{titleCase(ch.employmentStatus)}</span></div>
-        {ch.job && <>
-          <div className="kv"><span className="k">Job</span><span className="v">{jobTitle(ch.job)}</span></div>
-          <div className="kv"><span className="k">Salary</span><span className="v">{money(wageFor(country, ch.job, ch))}/yr</span></div>
-          <div className="kv"><span className="k">Years at rung</span><span className="v">{ch.job.yearsAtRung}</span></div>
-        </>}
-        {ch.military.status === 'career' && <>
-          <div className="kv"><span className="k">Rank</span><span className="v">{careerTitle(ch)}</span></div>
-          <div className="kv"><span className="k">Pay</span><span className="v">{money(careerWage(country, ch))}/yr</span></div>
-          <div className="kv"><span className="k">Years served</span><span className="v">{ch.military.yearsServed}</span></div>
-        </>}
-        {ch.military.status === 'serving' && <div className="kv"><span className="k">Conscript service</span><span className="v">{ch.military.remaining} yr(s) left</span></div>}
-        {ch.veteran && ch.military.status !== 'career' && <div className="kv"><span className="k">Veteran</span><span className="v">Yes</span></div>}
-        {ch.jobSearch.sector && <div className="kv"><span className="k">Seeking work in</span><span className="v">{SECTORS[ch.jobSearch.sector].label}</span></div>}
-
-        {ch.job && <button style={{ marginTop: 12 }} onClick={() => { quitJob(state); refresh(); }}>Quit job</button>}
+    {section==='current'&&<div className="grid cols-2">
+      <div className="panel"><h3>Current Situation</h3>
+        <div className="kv"><span>Status</span><span>{titleCase(ch.employmentStatus)}</span></div>
+        {ch.job?<><div className="kv"><span>Occupation</span><span>{jobTitle(ch.job)}</span></div><div className="kv"><span>Annual salary</span><span>{money(wageFor(country,ch.job,ch))}</span></div><div className="kv"><span>Time in current position</span><span>{ch.job.yearsAtRung} year(s)</span></div><div className="kv"><span>Field experience</span><span>{ch.experience?.sectors?.[ch.job.sector]||0} year(s)</span></div><button onClick={()=>{quitJob(state);refresh();}}>Quit job</button></>:<div className="muted">You do not currently hold a civilian job.</div>}
+        {ch.jobSearch?.sector&&<div className="notice">Seeking work in {SECTORS[ch.jobSearch.sector]?.label||ch.jobSearch.sector}.</div>}
       </div>
-
-      <div className="panel">
-        <h3>Opportunities</h3>
-        {isMinor && <div className="muted">Too young to work. Focus on school.</div>}
-        {isStudent && <div className="muted">You're studying. Finish your program first (see Education).</div>}
-        {isMilitary && <div className="muted">You're in the armed forces. See your status at left.</div>}
-        {isPrison && <div className="muted">You cannot seek civilian work while imprisoned. Employment options return after release, subject to your record.</div>}
-
-        {!isMinor && !isStudent && !isMilitary && !isPrison && <>
-          <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
-            Choose a sector to look for work. The hire resolves when you advance the year
-            (chance depends on unemployment, qualifications, and relevant experience).
-          </div>
-          {sectors.length === 0 && <div className="muted">No sectors open to you yet — gain a qualification or finish school.</div>}
-          {sectors.map(s => (
-            <div key={s.key} className="world-item" onClick={() => { setJobSearch(state, s.key); refresh(); }}
-              style={{ cursor: 'pointer', opacity: ch.jobSearch.sector === s.key ? 1 : 0.85 }}>
-              <span className="nm">{s.label}</span>
-              <span className="rg">enter as {s.entryTitle}
-                {ch.jobSearch.sector === s.key ? ' ✓ seeking' : ''}</span>
-            </div>
-          ))}
-
-          {canEnlistVoluntary(ch, country) && (
-            <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-              <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
-                {country.name} has armed forces you can join voluntarily.
-              </div>
-              <button onClick={() => { enlistMilitary(state); refresh(); }}>Enlist in the armed forces</button>
-            </div>
-          )}
-        </>}
+      <div className="panel"><h3>Military Service</h3>
+        {ch.military.status==='career'?<><div className="kv"><span>Rank</span><span>{careerTitle(ch)}</span></div><div className="kv"><span>Pay</span><span>{money(careerWage(country,ch))}/yr</span></div><div className="kv"><span>Years served</span><span>{ch.military.yearsServed}</span></div></>:ch.military.status==='serving'?<div className="kv"><span>Conscript service</span><span>{ch.military.remaining} year(s) left</span></div>:<div className="muted">{ch.veteran?'Veteran; not currently serving.':'Not serving.'}</div>}
       </div>
-    </div>
-  );
+    </div>}
+
+    {section==='find'&&<div className="panel"><h3>Find Work</h3>
+      {isMinor&&<div className="notice warn">You are too young for regular full-time work.</div>}{isStudent&&<div className="notice warn">Full-time study must be completed or paused before seeking regular work.</div>}{isMilitary&&<div className="notice warn">Civilian applications are unavailable during military service.</div>}{isPrison&&<div className="notice warn">Civilian applications are unavailable while imprisoned.</div>}
+      {!isMinor&&!isStudent&&!isMilitary&&!isPrison&&<><p className="muted">Choose a career family. Hiring resolves when you advance one year and depends on qualifications, experience, health, language, law, and the economy.</p><div className="career-list">{options.map(o=><div className="world-item" key={o.key} style={{opacity:o.eligible?1:.55}}><span className="nm">{o.label}</span><span className="rg">{o.eligible?`Entry: ${o.entryTitle}${ch.jobSearch?.sector===o.key?' ✓ applying':''}`:o.reason}</span>{o.eligible&&<button onClick={()=>{setJobSearch(state,o.key);refresh();}}>Apply</button>}</div>)}</div>
+        {canEnlistVoluntary(ch,country)&&<button style={{marginTop:14}} onClick={()=>{enlistMilitary(state);refresh();}}>Enlist in the armed forces</button>}</>}
+    </div>}
+
+    {section==='history'&&<div className="panel"><h3>Career History</h3>{!(ch.careerHistory||[]).length?<div className="muted">No recorded career events yet.</div>:[...(ch.careerHistory||[])].reverse().map((e,i)=><div className="kv" key={`${e.age}-${i}`}><span>Age {e.age} · {titleCase(e.type)}</span><span>{e.title}{e.note?` · ${e.note}`:''}</span></div>)}</div>}
+
+    {section==='qualifications'&&<div className="grid cols-2"><div className="panel"><h3>Credentials</h3>{(ch.education?.credentials||[]).length?(ch.education.credentials||[]).map(x=><div className="kv" key={x}><span>{x}</span><span>Completed</span></div>):<div className="muted">No formal credentials.</div>}</div><div className="panel"><h3>Experience</h3>{experienceSummary(ch).length?experienceSummary(ch).map(x=><div className="muted" key={x}>{x}</div>):<div className="muted">No work experience yet.</div>}</div></div>}
+  </div>;
 }
