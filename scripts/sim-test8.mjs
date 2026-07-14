@@ -40,7 +40,7 @@ const singapore=adult(COUNTRY_BY_NAME.Singapore);singapore.housing.tenure='paren
 assert.equal(applyForSocialHousing(singapore,COUNTRY_BY_NAME.Singapore),false,'Singapore public rental models the family-support gate');
 
 const parent=adult(sweden,808);parent.housing.tenure='private';setChildContributionPolicy(parent,'adult',.25);
-parent.family.push({id:'adult-child',relation:'Child',childNumber:1,alive:true,ageOffset:10,atHome:true,working:true,wageMult:.6,personalSavings:0,relationshipScore:80,skills:{academic:0}});
+parent.family.push({id:'adult-child',relation:'Child',childNumber:1,alive:true,ageOffset:10,atHome:true,working:true,wageMult:.6,personalSavings:0,relationshipScore:80});
 const family=resolveFamily(parent,sweden,makeRng(809));
 assert(family.incomes.some(x=>x.label.includes('board contribution')&&x.target==='household'));
 assert(parent.family.at(-1).personalSavings>0,'working adult child retains personal savings');

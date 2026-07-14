@@ -2,7 +2,7 @@
 import { medianWage } from './countries.js';
 import { genderRightsProfile } from './genderRights.js';
 import { healthEducationMultiplier } from './health.js';
-import { addSkillXp, hasSkillLevel } from './skills.js';
+import { addAccomplishment, addTrainingYear, ensureExperience } from './experience.js';
 
 export const SCHOOL = {
   PRIMARY_START: 6, SECONDARY_START: 12, SECONDARY_END: 18,
@@ -17,6 +17,8 @@ export function initEducation() {
     degree: false,        // has a university degree
     vocational: false,    // completed a vocational qualification
     credentials: [],
+    performance: 50,
+    schoolYearsCompleted: 0,
     yearsInHigher: 0,
     droppedOut: false,
     resistDropout: true,
@@ -31,7 +33,9 @@ export function initEducation() {
 export function resolveEducation(ch, country, rng) {
   const log = [];
   const ed = ch.education;
+  ensureExperience(ch);
   ed.credentials ||= ed.degree ? ["Bachelor's degree"] : ed.vocational ? ['Vocational certificate'] : [];
+  ed.performance ??= 50;ed.schoolYearsCompleted??=0;
   const age = ch.age;
   const rights = genderRightsProfile(country);
   if (ch.employmentStatus === 'prison') {
@@ -78,10 +82,11 @@ export function resolveEducation(ch, country, rng) {
       }
     }
 
-    // Quality: +2 * tier/2 Academic per year, +2 if private.
+    // Academic performance reflects school quality, health, intelligence, and study habits.
     const healthMult = healthEducationMultiplier(ch);
-    const gain = (2 * (country.educationTier / 2) + (ed.private ? 2 : 0)) * healthMult;
-    addSkillXp(ch, 'academic', gain);
+    const target=35+(ch.stats.intelligence||50)*.35+country.educationTier*5+(ed.private?7:0);
+    ed.performance=Math.max(0,Math.min(100,ed.performance+(target-ed.performance)*.18*healthMult));
+    ed.schoolYearsCompleted+=1;
     if (healthMult < 0.7) log.push('Health limitations and medical absences reduced your school progress this year.');
     if (ed.private) ed.familyEducationSpend += medianWage(country);
   }
@@ -98,13 +103,13 @@ export function resolveEducation(ch, country, rng) {
     ed._tuitionDue = true;
     ed.yearsInHigher += 1;
     const needed = ed.stage === 'university' ? 4 : 2;
-    // higher-ed academic gains
     const healthMult = healthEducationMultiplier(ch);
-    addSkillXp(ch, 'academic', 3 * healthMult);
+    ed.performance=Math.max(0,Math.min(100,ed.performance+2*healthMult));
+    if(ed.stage==='vocational')addTrainingYear(ch,'vocational');
     if (healthMult < 0.7) log.push('Health limitations reduced your higher-education progress this year.');
     if (ed.yearsInHigher >= needed) {
-      if (ed.stage === 'university') { ed.degree = true; if (!ed.credentials.includes("Bachelor's degree")) ed.credentials.push("Bachelor's degree"); log.push("Graduated university with a bachelor's degree."); }
-      else { ed.vocational = true; if (!ed.credentials.includes('Vocational certificate')) ed.credentials.push('Vocational certificate'); log.push('Completed a vocational certificate.'); }
+      if (ed.stage === 'university') { ed.degree = true; if (!ed.credentials.includes("Bachelor's degree")) ed.credentials.push("Bachelor's degree");addAccomplishment(ch,"Bachelor's degree"); log.push("Graduated university with a bachelor's degree."); }
+      else { ed.vocational = true; if (!ed.credentials.includes('Vocational certificate')) ed.credentials.push('Vocational certificate');addAccomplishment(ch,'Vocational certificate'); log.push('Completed a vocational certificate.'); }
       ed.stage = 'graduated';
       ed.enrolled = false;
     }
@@ -115,11 +120,11 @@ export function resolveEducation(ch, country, rng) {
 
 // Can the player enroll now? (called by UI/career choices)
 export function canEnrollUniversity(ch) {
-  return hasSkillLevel(ch, 'academic', 5) && ['secondary_done', 'graduated', 'dropout', 'workforce'].includes(ch.education.stage)
+  return (ch.education.performance??50)>=60 && ['secondary_done', 'graduated', 'dropout', 'workforce'].includes(ch.education.stage)
     && ch.age >= 18 && ch.employmentStatus !== 'prison' && !isEnrolledHigher(ch);
 }
 export function canEnrollVocational(ch) {
-  return hasSkillLevel(ch, 'academic', 3) && ['secondary_done', 'graduated', 'dropout', 'workforce'].includes(ch.education.stage)
+  return (ch.education.performance??50)>=45 && ['secondary_done', 'graduated', 'dropout', 'workforce'].includes(ch.education.stage)
     && ch.age >= 16 && ch.employmentStatus !== 'prison' && !isEnrolledHigher(ch);
 }
 export function isEnrolledHigher(ch) {
@@ -133,7 +138,7 @@ export function universityTuition(country, ch) {
   if (country.educationTier >= 4 && country.taxTier === 'heavy') annual = 0;          // free (e.g. Germany)
   else if (country.incomeTier >= 3) annual = 1.5 * mw;                                 // expensive (e.g. US)
   else annual = 0.2 * mw;                                                              // subsidized
-  const scholarship = hasSkillLevel(ch, 'academic', 7);
+  const scholarship = (ch.education.performance??50)>=80;
   if (scholarship) annual = 0;
   const loanable = country.incomeTier >= 3;
   return { annual, loanable, scholarship };

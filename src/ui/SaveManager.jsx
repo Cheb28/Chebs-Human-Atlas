@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { deleteSave, exportSaveText, listSaves, loadSave, parseSave, restoreEnvelope, saveManual } from '../engine/saves.js';
+import { deleteSave, exportSaveText, getSaveSettings, listSaves, loadSave, parseSave, restoreEnvelope, saveManual } from '../engine/saves.js';
 
 export default function SaveManager({ state, onLoad, onNotice, revision = 0 }) {
   const [name, setName] = useState('My life');
@@ -44,7 +44,7 @@ export default function SaveManager({ state, onLoad, onNotice, revision = 0 }) {
     </div>}
     <input ref={fileRef} className="visually-hidden" tabIndex="-1" aria-hidden="true" type="file" accept="application/json,.json" onChange={importJson} />
     <button onClick={() => fileRef.current?.click()}>Import JSON</button>
-    {saves.length === 0 ? <p className="muted">No saves yet. Three rolling autosaves are created as you age.</p> :
+    {saves.length === 0 ? <p className="muted">No saves yet. {getSaveSettings().autosaveInterval===0?'Autosaving is currently disabled.':`Autosaving runs every ${getSaveSettings().autosaveInterval} year${getSaveSettings().autosaveInterval===1?'':'s'} and retains three rolling copies.`}</p> :
       <div className="save-list" aria-label="Saved lives">{saves.map(s => <div className="save-row" key={s.key}>
         <div><strong>{s.name}</strong><div className="muted">Age {s.age} · {s.country} · generation {s.generation} · {new Date(s.savedAt).toLocaleString()}</div></div>
         <div className="save-actions"><button onClick={() => load(s.key)}>Load</button><button aria-label={confirmDelete===s.key?`Confirm deletion of ${s.name}`:`Delete ${s.name}`} onClick={() => remove(s.key)}>{confirmDelete===s.key?'Confirm deletion':'Delete'}</button></div>

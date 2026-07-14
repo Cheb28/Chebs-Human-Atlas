@@ -8,7 +8,7 @@ import { netWorth } from '../src/engine/advance.js';
 function autoPlay(state) {
   const ch = state.character;
   // pick activities: study while young, gym+socialize as adult
-  if (ch.age < 18) setActivities(state, ['studying', 'reading']);
+  if (ch.age < 18) setActivities(state, ['studying']);
   else setActivities(state, ['gym', 'socializing']);
   // at 18, try university if eligible else seek work
   if (ch.age === 18) {

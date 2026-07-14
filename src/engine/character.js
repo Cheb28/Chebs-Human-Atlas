@@ -5,10 +5,11 @@ import { initMilitary } from './military.js';
 import { initHealth } from './health.js';
 import { initImmigration } from './immigration.js';
 import { initJudicial } from './judicial.js';
-import { canonicalLanguage, primaryLanguages } from './language.js';
+import { assignBirthLanguages } from './language.js';
 import { initialHousing } from './housing.js';
 import { assignBirthHouseholdNames } from './names.js';
 import { initializeFamilyEconomy } from './household.js';
+import { initExperience } from './experience.js';
 
 export const WEALTH_CLASSES = ['Destitute', 'Poor', 'Middle', 'Affluent', 'Rich'];
 const PERSONALITY_TRAITS = ['ambitious','caring','independent','social','cautious','creative','resilient','curious'];
@@ -29,9 +30,11 @@ function rollDistribution(rng, list, fallback) {
   if (!list || list.length === 0) return fallback;
   const total = list.reduce((s, x) => s + x.pct, 0);
   if (total <= 0) return rng.pick(list).name;
-  let r = rng.next() * total;
+  // Some source lists only describe minorities. Treat the unlisted remainder as
+  // the local majority instead of making every character a listed minority.
+  let r = rng.next() * Math.max(total,100);
   for (const x of list) { r -= x.pct; if (r < 0) return x.name; }
-  return list[list.length - 1].name;
+  return fallback;
 }
 
 // Pick a location within a country. If forcedName given, use it; else roll by
@@ -80,7 +83,7 @@ export function createCharacter(rng, options = {}) {
 
   const sex = options.sex || (rng.chance(0.5) ? 'male' : 'female');
   const location = rollLocation(rng, country, options.locationName);
-  const localEthnicity = country.ethnicGroups?.some(x => x.name === options.ethnicity) ? options.ethnicity : null;
+  const localEthnicity = options.ethnicity==='Local'||country.ethnicGroups?.some(x => x.name === options.ethnicity) ? options.ethnicity : null;
   const localReligion = country.religions?.some(x => x.name === options.religion) ? options.religion : null;
   const ethnicity = localEthnicity || rollDistribution(rng, country.ethnicGroups, 'Local');
   const religion = localReligion || rollDistribution(rng, country.religions, 'None');
@@ -98,8 +101,9 @@ export function createCharacter(rng, options = {}) {
     ethnicity,
     religion,
     personality: [...new Set([rng.pick(PERSONALITY_TRAITS), rng.pick(PERSONALITY_TRAITS)])],
-    nativeLanguages: country.languages.slice(0, 2),
-    languages: Object.fromEntries(primaryLanguages(country).map(lang=>[canonicalLanguage(lang),100])),
+    nativeLanguages: [],
+    languages: {},
+    languageModelVersion: 2,
     languageStudyTarget: null,
     wealthClass,
     age: 0,
@@ -112,7 +116,7 @@ export function createCharacter(rng, options = {}) {
       fitness: 50 + rng.int(-8, 8),
       charisma: 45 + rng.int(-8, 8),
     },
-    skills: { academic: 0, vocational: 0, business: 0, political: 0 },
+    experience: initExperience(),
     money: { cash: 0, bank: 0, household: 0 },
     debts: { studentLoan: 0, mortgage: 0, business: 0 },
     investments: { bonds:0, stocks:0, realEstate:0, gold:0, pension:0 },
@@ -196,6 +200,7 @@ export function createCharacter(rng, options = {}) {
     setForeignParent(foreign, rng.chance(.5) ? 'Father' : 'Mother', rng.chance(.5));
   }
 
+  assignBirthLanguages(character,country,COUNTRY_BY_ID);
   assignBirthHouseholdNames(character, rng, country, options.playerName);
   initializeFamilyEconomy(character, country, rng);
 

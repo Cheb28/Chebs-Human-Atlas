@@ -7,6 +7,8 @@ import { settleEstate } from './inheritance.js';
 import { COUNTRY_BY_ID } from './countries.js';
 import { displayName, hydrateNames } from './names.js';
 import { initializeFamilyEconomy } from './household.js';
+import { ensureExperience } from './experience.js';
+import { migrateLanguages } from './language.js';
 
 // Create a fresh game. options passed through to createCharacter.
 // If options.seed omitted, a random one is generated (kept for reproducibility).
@@ -56,6 +58,10 @@ export function serialize(state) {
 export function deserialize(data) {
   const rng = makeRng(data.rngState ?? data.seed);
   hydrateNames(data.character, rng);
+  ensureExperience(data.character);
+  for(const p of data.character.family||[])ensureExperience(p);
+  const birthCountry=COUNTRY_BY_ID[data.character.immigration?.originCountryId]||COUNTRY_BY_ID[data.character.countryId];
+  migrateLanguages(data.character,birthCountry,COUNTRY_BY_ID);
   initializeFamilyEconomy(data.character, COUNTRY_BY_ID[data.character.countryId], rng);
   return { ...data, rng };
 }
@@ -76,7 +82,9 @@ export function continueAsHeir(state, childId) {
   heir.identity = structuredClone(child.identity);
   heir.name = child.name;
   heir.stats = { ...child.stats };
-  heir.skills = { ...child.skills };
+  heir.experience = structuredClone(child.experience||heir.experience);
+  heir.education.performance=child.educationPerformance??heir.education.performance;
+  heir.education.credentials=[...(child.credentials||[])];
   heir.money.bank = inheritance;
   heir.money.cash = 0;
   if (child.citizenships?.length) heir.immigration.citizenships = [...child.citizenships];

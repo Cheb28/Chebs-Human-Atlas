@@ -1,6 +1,6 @@
 // Military service & conscription (GAME_DESIGN section 7).
 import { medianWage } from './countries.js';
-import { addSkillXp, hasSkillLevel } from './skills.js';
+import { addTrainingYear, vocationalYears } from './experience.js';
 
 // Countries that recognize alternative civilian service (hand-tuned; default:
 // democracies with conscription). Used when the profile is mandatory/selective.
@@ -90,7 +90,7 @@ export function resolveConscriptService(ch, country, rng) {
   ch._serviceIncome = 0.3 * medianWage(country);
   if (!alt) {
     ch.stats.fitness = Math.min(100, ch.stats.fitness + 4);
-    addSkillXp(ch, 'vocational', 3);
+    addTrainingYear(ch,'vocational');
     // injury/death risk
     const risk = country.conflict.displacement ? 0.10 : 0.01;
     if (rng.chance(risk)) {
@@ -128,8 +128,8 @@ export function resolveEvasion(ch, country, rng) {
 // ---- Voluntary military career (any country with armed forces) ----------
 const CAREER_RUNGS = [
   { title: 'Enlisted', mult: 0.8, gate: () => true },
-  { title: 'NCO', mult: 1.2, gate: (ch) => ch.military.yearsServed >= 3 || hasSkillLevel(ch,'vocational',4) },
-  { title: 'Officer', mult: 2.0, gate: (ch) => ch.education.degree || hasSkillLevel(ch,'academic',6) },
+  { title: 'NCO', mult: 1.2, gate: (ch) => ch.military.yearsServed >= 3 || vocationalYears(ch)>=4 },
+  { title: 'Officer', mult: 2.0, gate: (ch) => ch.education.degree },
 ];
 
 export function canEnlistVoluntary(ch, country) {

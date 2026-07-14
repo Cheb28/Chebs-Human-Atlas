@@ -40,7 +40,7 @@ assert.equal(genderRightsProfile(afghanistan).tier, 'severe');
   ch.family.push({
     id: 'child-test', relation: 'Child', childNumber: 1, alive: true, ageOffset: 20, sex: 'female',
     ethnicity: ch.ethnicity, religion: ch.religion, relationshipScore: 70,
-    stats: { ...ch.stats }, skills: { ...ch.skills },
+    stats: { ...ch.stats }, experience: structuredClone(ch.experience),
   });
   ch.will = { written: true, shares: { spouse: 0, 'child-test': 100 } };
   const estate = settleEstate(ch, germany);
@@ -58,7 +58,7 @@ assert.equal(genderRightsProfile(afghanistan).tier, 'severe');
   ch.family.push({
     id: 'child-heir', relation: 'Child', childNumber: 1, alive: true, ageOffset: 30, sex: 'male',
     ethnicity: ch.ethnicity, religion: ch.religion, relationshipScore: 80,
-    stats: { ...ch.stats }, skills: { academic: 45, vocational: 10, business: 0, political: 0 },
+    stats: { ...ch.stats }, experience: { sectors:{professional:3},managementYears:0,businessYears:0,profitableBusinessYears:0,civicYears:0,training:{vocational:0,business:0},accomplishments:[] },
   });
   s.over = true; s.estate = settleEstate(ch, us);
   const next = continueAsHeir(s, 'child-heir');

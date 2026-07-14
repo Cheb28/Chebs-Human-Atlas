@@ -6,7 +6,7 @@ import { medianWage } from './countries.js';
 import { wageFor, SECTORS } from './jobs.js';
 import { resolveVisaExpiry, resolveNationalityChoice } from './immigration.js';
 import { resolveAppeal, resolveCivilDecision, resolveLegalDecision } from './judicial.js';
-import { addSkillXp } from './skills.js';
+import { addAccomplishment, addTrainingYear } from './experience.js';
 
 // ---- Decision resolver (by type, keeps decisions serializable) ----------
 export function resolveDecision(ch, country, state, rng, decision, log) {
@@ -29,8 +29,11 @@ export function resolveDecision(ch, country, state, rng, decision, log) {
     }
     case 'mentor': {
       if (choice === 'accept') {
-        addSkillXp(ch, decision.skill, 8);
-        log.push(`Took up a mentor's guidance (+8 ${decision.skill} XP).`);
+        const focus=decision.focus||decision.skill||'academic';
+        if(focus==='academic')ch.education.performance=Math.min(100,(ch.education.performance??50)+5);
+        else addTrainingYear(ch,focus==='vocational'?'vocational':'business');
+        addAccomplishment(ch,`${focus[0].toUpperCase()+focus.slice(1)} mentorship`);
+        log.push(`Completed a year of ${focus} mentorship.`);
       }
       break;
     }
@@ -120,10 +123,10 @@ export function rollEvents(ch, country, state, rng) {
     if (offer) decisions.push(offer);
   }
   if (adult && ch.age < 55 && ch.employmentStatus !== 'prison' && rng.chance(0.03)) {
-    const skill = rng.pick(['academic', 'vocational', 'business']);
-    decisions.push({ type: 'mentor', skill, default: 'accept',
-      prompt: `A mentor offers to sharpen your ${skill} skills.`,
-      options: [{ id: 'accept', label: 'Accept', desc: `+8 ${skill}` }, { id: 'decline', label: 'Decline', desc: 'no change' }] });
+    const focus = rng.pick(['academic', 'vocational', 'business']);
+    decisions.push({ type: 'mentor', focus, default: 'accept',
+      prompt: `A mentor offers a year of ${focus} guidance.`,
+      options: [{ id: 'accept', label: 'Accept', desc: 'recorded training and accomplishment' }, { id: 'decline', label: 'Decline', desc: 'no change' }] });
   }
   // Rare windfall (informational).
   if (rng.chance(0.01)) {

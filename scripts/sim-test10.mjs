@@ -3,7 +3,7 @@ import { newGame } from '../src/engine/game.js';
 import { COUNTRY_BY_NAME } from '../src/engine/countries.js';
 import { resolveFamily, compatibilityScore } from '../src/engine/family.js';
 import { relationshipLawProfile, canMarry } from '../src/engine/relationshipLaws.js';
-import { addSkillXp, skillLevel } from '../src/engine/skills.js';
+import { addAccomplishment, recordWorkYear } from '../src/engine/experience.js';
 import { settleEstate } from '../src/engine/inheritance.js';
 
 const us=COUNTRY_BY_NAME['United States'],afghanistan=COUNTRY_BY_NAME.Afghanistan,japan=COUNTRY_BY_NAME.Japan;
@@ -17,10 +17,10 @@ assert.equal(canMarry(lawState,femalePartner,us),true);
 assert.equal(canMarry(lawState,femalePartner,japan),false);
 assert(compatibilityScore(lawState,femalePartner)>=70);
 
-// Skills are uncapped XP translated into levels; schooling is represented by credentials.
-addSkillXp(lawState,'academic',135);
-assert.equal(skillLevel(lawState.skills.academic),13);
-assert(lawState.skills.academic>100);
+// Experience is recorded in real years; schooling is represented by performance and credentials.
+recordWorkYear(lawState,'service');addAccomplishment(lawState,'Community organizer');
+assert.equal(lawState.experience.sectors.service,1);
+assert(lawState.experience.accomplishments.includes('Community organizer'));
 assert(Array.isArray(lawState.education.credentials));
 
 // Friendship and a persistent pregnancy resolve through yearly family turns.
@@ -40,7 +40,7 @@ assert(Array.isArray(lawState.education.credentials));
 // Children develop education, work, relationships, and descendants.
 {
   const s=newGame({countryId:us.id,seed:10003}),ch=s.character;ch.age=40;
-  const child={id:'developing-child',relation:'Child',childNumber:1,alive:true,sex:'female',ageOffset:34,relationshipScore:80,personality:['curious','social'],educationOutcome:'not school age',career:null,partnerStatus:'single',ownChildren:0,healthConditions:[],stats:{health:70,happiness:60,intelligence:60,fitness:50,charisma:50},skills:{academic:0,vocational:0,business:0,political:0},atHome:true,working:false,personalSavings:0,countryId:us.id};
+  const child={id:'developing-child',relation:'Child',childNumber:1,alive:true,sex:'female',ageOffset:34,relationshipScore:80,personality:['curious','social'],educationOutcome:'not school age',career:null,partnerStatus:'single',ownChildren:0,healthConditions:[],stats:{health:70,happiness:60,intelligence:60,fitness:50,charisma:50},educationPerformance:50,credentials:[],atHome:true,working:false,personalSavings:0,countryId:us.id};
   ch.family.push(child);resolveFamily(ch,us,s.rng);assert.equal(child.educationOutcome,'primary school');
   ch.age=52;resolveFamily(ch,us,s.rng);assert.notEqual(child.educationOutcome,'not school age');
   ch.age=60;for(let i=0;i<30&&!child.career;i++)resolveFamily(ch,us,s.rng);

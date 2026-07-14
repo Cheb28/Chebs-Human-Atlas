@@ -2,7 +2,9 @@ import { deserialize, serialize } from './game.js';
 
 export const SAVE_SCHEMA_VERSION = 1;
 const PREFIX = 'chebs-human-atlas.save.';
+const SETTINGS_KEY='chebs-human-atlas.settings';
 const AUTOS = 3;
+export const AUTOSAVE_INTERVALS=[0,1,5,10];
 
 function storage() {
   try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; }
@@ -58,9 +60,22 @@ function read(key) {
   try { return validateSave(JSON.parse(raw)); } catch { return null; }
 }
 
-export function autosave(state) {
+export function getSaveSettings(){
+  try{const value=JSON.parse(storage()?.getItem(SETTINGS_KEY)||'{}');return{autosaveInterval:AUTOSAVE_INTERVALS.includes(value.autosaveInterval)?value.autosaveInterval:1};}
+  catch{return{autosaveInterval:1};}
+}
+
+export function setAutosaveInterval(interval){
+  const value=Number(interval),autosaveInterval=AUTOSAVE_INTERVALS.includes(value)?value:1;
+  const s=storage();if(!s)throw new Error('Browser storage is unavailable.');
+  s.setItem(SETTINGS_KEY,JSON.stringify({autosaveInterval}));return autosaveInterval;
+}
+
+export function autosave(state,{force=false}={}) {
   const s = storage();
   if (!s) return false;
+  const interval=getSaveSettings().autosaveInterval;
+  if(!force&&(interval===0||state.character.age%interval!==0))return false;
   for (let i = AUTOS - 1; i > 0; i--) {
     const previous = s.getItem(PREFIX + `auto.${i - 1}`);
     if (previous) s.setItem(PREFIX + `auto.${i}`, previous);

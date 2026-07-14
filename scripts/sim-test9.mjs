@@ -21,7 +21,7 @@ assert.throws(()=>validateSave({app:"Cheb's Human Atlas",schemaVersion:999,paylo
 // Core traceability contracts: global country coverage and all major state surfaces exist at birth.
 assert(COUNTRIES.length>=200,'at least 200 playable country records');
 const trace=newGame({countryId:COUNTRY_BY_NAME.Brazil.id,seed:9002}).character;
-for(const key of ['stats','skills','money','debts','education','military','health','immigration','judicial','housing','benefits','family'])assert(key in trace,`traceability state: ${key}`);
+for(const key of ['stats','experience','money','debts','education','military','health','immigration','judicial','housing','benefits','family'])assert(key in trace,`traceability state: ${key}`);
 assert.deepEqual(trace.selectedActivities,[]);
 assert.equal(trace.ownsHome,false);
 
@@ -44,7 +44,7 @@ for(let i=0;i<scenarios.length;i++){
   while(!s.over&&s.character.age<125){
     const ch=s.character;
     if(ch.age>=16){ch.datingIntent=true;ch.childrenIntent='neutral';}
-    if(ch.age>=18&&!ch.job&&ch.employmentStatus==='unemployed')ch.jobSearch.sector=ch.skills.academic>35?'professional':'service';
+    if(ch.age>=18&&!ch.job&&ch.employmentStatus==='unemployed')ch.jobSearch.sector=ch.education.degree?'professional':'service';
     if(name==='Nigeria'&&ch.age===25&&!migrated){moveCharacter(ch,COUNTRY_BY_NAME.Germany,'skilled',ch.age);migrated=true;}
     stepYear(s);
     assert.equal(s.character.age,previousAge+1,'every click advances exactly one year');previousAge=s.character.age;

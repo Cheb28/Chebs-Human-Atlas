@@ -1,7 +1,7 @@
 import { medianWage } from './countries.js';
 import { genderRightsProfile } from './genderRights.js';
 import { ensureHousing } from './housing.js';
-import { addSkillXp, skillLevel } from './skills.js';
+import { ensureExperience, initExperience } from './experience.js';
 import { canMarry, isSameSexCouple, relationshipLawProfile } from './relationshipLaws.js';
 import { applyMarriageName, displayName, generateRelatedName, hydrateNames } from './names.js';
 import { ensureMemberEconomy, resolveHouseholdEconomy } from './household.js';
@@ -76,7 +76,7 @@ function makeChild(ch, country, rng, origin = 'birth') {
     educationOutcome: 'not school age', career: null, partnerStatus: 'single', ownChildren: 0,
     healthConditions: [], favoritism: 'neutral', estranged: false,
     stats: { health: clamp(ch.stats.health + rng.int(-10,10)), happiness:60+rng.int(-8,8), intelligence:clamp(ch.stats.intelligence+rng.int(-10,10)), fitness:50+rng.int(-10,10), charisma:45+rng.int(-10,10) },
-    skills: { academic:0, vocational:0, business:0, political:0 }, atHome:true, working:false, personalSavings:0, grandchildren:[],
+    experience:initExperience(),educationPerformance:50,credentials:[],atHome:true,working:false,personalSavings:0,grandchildren:[],
   };
   generateRelatedName(rng,country,child,ch);ensureMemberEconomy(child,ch,country,rng);return child;
 }
@@ -102,15 +102,16 @@ function resolveChildDevelopment(ch, p, country, rng, housing, logs) {
   if (p.relationshipScore != null && !(ch.selectedActivities||[]).includes('family')) p.relationshipScore=clamp(p.relationshipScore-2);
   if (age === 6) { p.educationOutcome='primary school'; logs.push(`${p.name||`Child ${p.childNumber}`} started primary school.`); }
   if (age >= 6 && age < 18) {
-    addSkillXp(p,'academic',country.educationTier*.8);
+    ensureExperience(p);p.educationPerformance=clamp((p.educationPerformance??50)+(country.educationTier-2)*.8+(p.stats.intelligence-50)*.02);
     if (rng.chance(.012 * (4-country.incomeTier))) { p.healthConditions.push('childhood chronic condition'); p.stats.health=clamp(p.stats.health-8); logs.push(`${p.name||`Child ${p.childNumber}`} developed a chronic health condition.`); }
   }
   if (age === 18) {
-    p.educationOutcome = skillLevel(p.skills.academic)>=5 && country.educationTier>=3 ? 'secondary graduate; pursuing higher education' : skillLevel(p.skills.academic)>=3 ? 'secondary graduate' : 'limited schooling';
+    p.educationOutcome = p.educationPerformance>=70&&country.educationTier>=3?'secondary graduate; pursuing higher education':p.educationPerformance>=45?'secondary graduate':'limited schooling';
+    if(p.educationOutcome.includes('secondary graduate')&&!p.credentials.includes('Secondary diploma'))p.credentials.push('Secondary diploma');
     logs.push(`${p.name||`Child ${p.childNumber}`} reached adulthood with ${p.educationOutcome}.`);
   }
   if (age >= 18) {
-    if (!p.career && rng.chance(.42+country.incomeTier*.06)) { p.career=skillLevel(p.skills.academic)>=5?'professional work':skillLevel(p.skills.vocational)>=3?'skilled trade':'general work'; logs.push(`${p.name||`Child ${p.childNumber}`} began ${p.career}.`); }
+    if (!p.career && rng.chance(.42+country.incomeTier*.06)) { p.career=p.educationPerformance>=70?'professional-track work':p.finances?.sector==='industrial'?'skilled trade':'general work'; logs.push(`${p.name||`Child ${p.childNumber}`} began ${p.career}.`); }
     if (age>=20 && p.partnerStatus==='single' && rng.chance(.12)) { p.partnerStatus='partnered'; logs.push(`${p.name||`Child ${p.childNumber}`} entered a serious relationship.`); }
     if (age>=22 && p.partnerStatus==='partnered' && rng.chance(.12)) { p.partnerStatus='married'; logs.push(`${p.name||`Child ${p.childNumber}`} married.`); }
     if (age>=22 && ['partnered','married'].includes(p.partnerStatus) && rng.chance(Math.min(.18,(country.fertility||2)/18))) { const grandchild={id:`grandchild-${p.id}-${(p.grandchildren||[]).length+1}`,relation:'Grandchild',alive:true,sex:rng.chance(.5)?'male':'female',ageOffset:ch.age,countryId:country.id,relationshipScore:65};generateRelatedName(rng,country,grandchild,ch,{familyName:p.identity?.familyName});p.grandchildren||=[];p.grandchildren.push(grandchild);p.ownChildren=p.grandchildren.length;logs.push(`${displayName(p)} had ${displayName(grandchild)}; you became a grandparent.`); }

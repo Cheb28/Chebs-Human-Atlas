@@ -38,7 +38,7 @@ phase.
     lockouts, and retaliation depend on country and sector.
 12. **Layoffs and economic cycles:** recessions, closures, automation, industry decline,
     restructuring, hiring booms, and government responses affect yearly job security.
-13. **Promotions and management:** experience, skill XP and levels, credentials, performance,
+13. **Promotions and management:** relevant years, credentials, performance,
     networking, workplace relationships, discrimination, and available vacancies affect progress.
 14. **Retirement and pensions:** statutory and customary retirement ages, contribution history,
     employer pensions, early retirement, mandatory retirement, and returning to work.
@@ -89,7 +89,7 @@ phase.
   fostering, and single-parent pathways.
 - Child personality, education, health, career, relationship, and grandchild development.
 - Caregiving, estrangement, reconciliation, favoritism, and inheritance-dispute risk.
-- Uncapped skill XP/levels and formal education credentials.
+- Recorded work/training experience, accomplishments, academic performance, and formal credentials.
 
 ## Later-depth ideas
 

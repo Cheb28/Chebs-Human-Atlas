@@ -21,6 +21,7 @@ const Family = lazy(() => import('./ui/tabs/Family.jsx'));
 const Law = lazy(() => import('./ui/tabs/Law.jsx'));
 const Business = lazy(() => import('./ui/tabs/Business.jsx'));
 const Travel = lazy(() => import('./ui/tabs/Travel.jsx'));
+const Settings = lazy(() => import('./ui/tabs/Settings.jsx'));
 
 // The engine's game object is a single MUTABLE state object (by design). We hold
 // it in a ref and force a re-render after each mutation, rather than storing it in
@@ -52,7 +53,7 @@ export default function App() {
     if (!g || g.over) return;
     setAdvanceWarnings(null);
     stepYear(g);
-    try { autosave(g); setSaveRevision(x => x + 1); }
+    try { if(autosave(g))setSaveRevision(x => x + 1); }
     catch { setNotice({ message: 'Autosave failed; JSON export is still available.', bad: true }); }
     forceRender();
   }, []);
@@ -78,7 +79,7 @@ export default function App() {
     const next = continueAsHeir(gameRef.current, childId);
     if (!next) return;
     gameRef.current = next;
-    try { autosave(next); setSaveRevision(x => x + 1); } catch { /* export remains available */ }
+    try { if(autosave(next))setSaveRevision(x => x + 1); } catch { /* export remains available */ }
     setTab('overview');
     setAdvanceWarnings(null);
     forceRender();
@@ -109,7 +110,7 @@ export default function App() {
       <TabBar active={tab} onChange={setTab} badges={badges} />
       <div className="content">
         <Suspense fallback={<div className="loading" role="status">Loading screen…</div>}>
-        {tab === 'overview' && <Overview state={state} saveTools={saveTools} refresh={refresh} />}
+        {tab === 'overview' && <Overview state={state} />}
         {tab === 'activities' && <Activities {...tabProps} />}
         {tab === 'finances' && <Finances {...tabProps} />}
         {tab === 'career' && <Career {...tabProps} />}
@@ -121,6 +122,7 @@ export default function App() {
         {tab === 'business' && <Business {...tabProps} />}
         {tab === 'travel' && <Travel {...tabProps} />}
         {tab === 'world' && <World />}
+        {tab === 'settings' && <Settings saveTools={saveTools} onNotice={setNotice} />}
         </Suspense>
       </div>
       <div className="age-action-bar">

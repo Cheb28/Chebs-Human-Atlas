@@ -57,14 +57,11 @@ Core stats, 0–100, visible as bars on the Overview tab:
 | Fitness | strength/athleticism | Gym, Sports, military service | age (declines after ~40), sedentary years |
 | Charisma | social skill | Socializing, activism, work | isolation, prison |
 
-Skill tracks, 0–100, on the Career tab:
-
-| Skill | Fed by | Gates |
-|---|---|---|
-| Academic | school, Studying, Reading | university admission, professional jobs |
-| Vocational | trade work, military service, side hustles | skilled trades, promotions |
-| Business | running a business, Business Books activity | business success rolls |
-| Political | Political Activism | activism outcomes, some events |
+Qualifications and experience are concrete records rather than abstract XP. Education stores
+academic performance, completed years, and credentials. Career history stores years in each sector,
+management experience, business ownership, vocational/business training, civic involvement, and
+named accomplishments. These records gate applications, promotions, immigration, and business
+outcomes.
 
 **Age drift:** Health −0.5/yr from 40, −1.5/yr from 65. Fitness −1/yr from 40 unless Gym checked. Intelligence stable. Happiness has a **setpoint** of 50 modified by circumstances (employed +5, married +5 avg, poverty −10, chronic illness −10, recent bereavement −15 decaying over 3 years); each year Happiness moves 30% toward its setpoint.
 
@@ -88,14 +85,13 @@ School and jobs consume time implicitly and are not activities. Activity effects
 
 | Activity | Effect | Notes |
 |---|---|---|
-| Studying | +3 Academic, +1 Intelligence | ×1.5 while enrolled in school |
-| Reading | +1 Intelligence, +1 Academic, +1 Happiness | |
+| Studying & Reading | +Academic performance, +1 Intelligence, +1 Happiness | larger performance effect while enrolled |
 | Gym / Sports | +3 Fitness, +1 Health | requires cost-of-living tier ≥ Poor or free (rural = free) |
 | Socializing | +2 Charisma, +2 Happiness, +relationship scores | |
-| Political activism | +3 Political, +1 Charisma | risk in authoritarian countries: yearly 3% arrest event roll (§13) |
+| Political activism | +1 year civic involvement, +1 Charisma | risk in authoritarian countries: yearly 3% arrest event roll (§13) |
 | Religious practice | +2 Happiness, community ties (+1 Charisma) | only if religious |
-| Side hustle | +small income (5–15% of local median wage), +1 Vocational | not while imprisoned |
-| Business books | +2 Business | |
+| Side hustle | +small income (5–15% of local median wage), +1 year informal experience | not while imprisoned |
+| Business study | +1 year business preparation | |
 | Family time | +relationship scores ×2, +1 Happiness | requires spouse or children |
 | Rest / leisure | +2 Happiness, +1 Health | |
 
@@ -111,8 +107,8 @@ tunable table for balancing.
 Stages: **Primary (6–11) → Secondary (12–17) → University or Vocational (18+, 4 or 2 years)**.
 
 - **Access:** each country has an `educationTier` (1–4, derived per DATA_PIPELINE §Derived tiers). In tier 1–2 countries, children of Destitute/Poor families face a yearly roll to be pulled out of school for work (tier 1: 15%/yr, tier 2: 5%/yr; player can resist at a family-wealth cost). Tier 3–4: schooling through secondary is automatic and free.
-- **Quality:** school adds `+2 × educationTier/2` Academic per year (so tier 4 ≈ +4/yr). Private school option (cost: 1× local median wage/yr) adds +2 and is required for good schooling in tier 1 countries.
-- **University:** admission requires Academic ≥ 50 (vocational: ≥ 30). Tuition by country tier: free (tier 4 public systems, e.g. Germany), subsidized (~20% median wage/yr), expensive (~150% median wage/yr, e.g. US private). Scholarships: Academic ≥ 75 waives tuition. Student loans available in tier 3–4 countries (repay 10%/yr of salary after graduation).
+- **Quality:** academic performance responds annually to intelligence, health, school quality, private schooling, and Studying & Reading.
+- **University:** admission requires academic performance ≥ 60 (vocational: ≥ 45). Tuition by country tier: free (tier 4 public systems, e.g. Germany), subsidized (~20% median wage/yr), expensive (~150% median wage/yr, e.g. US private). Scholarships require performance ≥ 80. Student loans are available in tier 3–4 countries.
 - **Degrees** gate professional job ladders and skilled-visa immigration. Adult re-entry allowed at any age.
 - **Studying abroad** is an immigration pathway (student visa, §12): pay foreign tuition, gain residence years.
 
@@ -120,7 +116,7 @@ Stages: **Primary (6–11) → Secondary (12–17) → University or Vocational 
 
 ## 6. Jobs & income
 
-**Job ladders by sector.** Each country weights sectors by its real GDP composition (agriculture/industry/services). Ladders (each rung has min age, skill gate, wage multiplier vs. country median wage):
+**Job ladders by sector.** Each country weights sectors by its real GDP composition. Ladders use credentials, relevant years of work, management history, and wage multipliers:
 
 - **Informal/agricultural:** laborer (0.4×) → farmhand (0.6×) → foreman (0.9×). No gates. The only option for illegal immigrants and tier-1 dropouts.
 - **Service:** shop clerk (0.7×) → office worker (1.0×) → manager (1.8×) → executive (3.5×). Gates: secondary school, then Academic/Charisma.
@@ -131,8 +127,8 @@ Stages: **Primary (6–11) → Secondary (12–17) → University or Vocational 
 
 **Median wage** per country = `GDP per capita (PPP) × 0.55` (household labor share approximation), converted to a single in-game currency display: everything is denominated in **local-PPP dollars** — do not simulate exchange rates; when the player emigrates, convert net worth at a PPP penalty/bonus derived from the GDP-pc ratio of the two countries.
 
-- **Getting hired:** yearly application roll = base 70% − country unemployment rate (youth unemployment rate for first job) + skill margin above the gate. Failing means a year unemployed (welfare per §8.5).
-- **Promotion:** yearly roll once skill gate for the next rung is met (base 20%/yr, +Charisma/200).
+- **Getting hired:** yearly application roll = base 70% − country unemployment rate (youth unemployment for a first job) + qualification and relevant-experience bonuses.
+- **Promotion:** yearly roll once the credential and experience gate for the next rung is met (base 20%/yr, +Charisma/200).
 - **Firing/layoff:** 3%/yr base, doubled during a national recession event.
 - **Retirement:** eligible at country retirement age (default 65, 60 in some); pension per §8.5.
 
@@ -272,7 +268,7 @@ Deliberately lightweight — no social-sim depth.
 From age 18, Business tab:
 
 - **Found:** pick sector (weighted to country GDP mix), invest starting capital (min 0.5× median wage for informal stall, 5× for registered company).
-- **Yearly resolution:** revenue = capital × sector base return (0.9–1.4 random) × (1 + Business skill/200) × country modifier (GDP growth + `bizClimate` tier from corruption/legal data) − wages if employees hired.
+- **Yearly resolution:** revenue = capital × sector base return × business ownership/profit/training experience × country business climate − wages and interest.
 - **Grow:** reinvest, hire employees (each adds capacity, costs 1× median wage), take business loan (tier ≥ 2, 10% interest).
 - **Exit:** sell at 1.5× trailing profit, or **bankruptcy** if capital ≤ 0 → judicial process (§13): debts discharged in strong-law countries; debt prison risk in weak-law ones.
 - Informal businesses (unregistered) pay no tax but capped in size and vulnerable to shakedown events in weak-law countries.
@@ -287,7 +283,7 @@ Travel/Immigration tab shows any target country with entry routes, costs, and th
 |---|---|---|
 | Treaty freedom of movement | citizenship in same bloc (table below) | trivial cost; full work rights |
 | Regional residence agreement | nationality in MERCOSUR Residence, Andean Community, or EAC area | two-year temporary work/residence permission, then permanent-residence conversion |
-| Skilled visa | university degree + (Academic or Vocational ≥ 60); target must be income tier ≥ own | fees ~0.5× median wage; work rights |
+| Skilled visa | university degree + two years of professional experience; target must be income tier ≥ own | fees ~0.5× median wage; work rights |
 | Student visa | admitted to university; pay foreign tuition | fixed term; destination-specific part-time work cap; counts toward residency |
 | Temporary work visa | Academic or Vocational ≥ 35 | employer/sector-tied permission for 2–3 years; does not initially count toward naturalization |
 | Working holiday visa | age 18–30 and eligible partner-country passport | 12-month stay in Australia, New Zealand, Italy/Japan; temporary jobs only |
@@ -316,8 +312,9 @@ income-tier defaults. A graduated student may seek a two-year post-study work pe
 
 **Naturalization:** from each country's real Citizenship data — residency years required, dual-citizenship allowed?, jus soli for player's children born there. Citizenship unlocks passport (visa-free mobility tier), voting-flavor events, and conscription liability (§7) in the new country.
 
-Emigrating converts net worth per §6's PPP conversion; property must be sold. Language is tracked as
-0–100 proficiency for at most two primary languages per country. Language study consumes one annual
+Emigrating converts net worth per §6's PPP conversion; property must be sold. Household languages
+come from family background rather than every language listed for a country. Newborns begin with
+exposure, school introduces the main instructional language, and language study consumes one annual
 activity slot and adds 20 proficiency. Local proficiency below 60 reduces civilian wages by 5–25%.
 Selected common destination countries require 50–70 proficiency for naturalization; the threshold is
 shown before applying. Countries without an explicit modeled requirement do not receive an invented test.
@@ -379,13 +376,13 @@ War events raise mortality, crash the local economy (−30% wages), unlock the a
 
 **Top tab bar** (persistent), one window per tab — organized, no mega-screen (user requirement #16):
 
-`Overview | Activities | Finances | Career | Education | Family | Health | Business | Travel | Law | Events | World`
+`Overview | Activities | Finances | Career | Education | Family | Health | Business | Travel | Law | Events | World | Settings`
 
 - **Persistent header:** name, age, location flag+city, cash, Health/Happiness mini-bars, **Advance Year** button (always visible), Events badge.
 - **Overview:** stat bars, current situation summary, this-year log digest, net-worth sparkline.
 - **World:** browse any country's profile (its stats, systems, tiers) — doubles as the emigration research screen.
 - Design language: clean, data-dense control-room panels (dark theme default). No modal popups except death.
-- **Save system:** versioned localStorage autosave every year (rolling 3), named manual save slots, exact RNG restoration, and validated JSON export/import on Overview and character creation.
+- **Save system:** Settings contains rolling autosave controls (Off/every 1, 5, or 10 years), named manual save slots, exact RNG restoration, and validated JSON export/import. Saved lives remain accessible from character creation.
 
 ---
 

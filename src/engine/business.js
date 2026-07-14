@@ -1,17 +1,19 @@
 import { medianWage } from './countries.js';
-import { skillLevel } from './skills.js';
+import { addBusinessYear, ensureExperience } from './experience.js';
 
 export function resolveBusiness(ch, country, rng) {
   const b = ch.business;
   if (!b) return { income: 0, logs: [] };
   const mw = medianWage(country);
   const climate = 0.8 + (country.bizClimate || 1) * 0.1;
+  const experience=ensureExperience(ch);
   const productiveCapital = Math.max(0, b.capital);
   const revenue = productiveCapital * rng.float(0.9, 1.4)
-    * (1 + skillLevel(ch.skills.business) / 20) * climate;
+    * (1 + Math.min(.5,experience.businessYears*.035+experience.profitableBusinessYears*.015+experience.training.business*.02)) * climate;
   const wages = b.employees * mw;
   const interest = b.loan * 0.10;
   const profit = revenue - wages - interest;
+  addBusinessYear(ch,profit>0);
   b.lastRevenue = revenue;
   b.lastWages = wages;
   b.lastInterest = interest;

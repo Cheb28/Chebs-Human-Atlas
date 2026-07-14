@@ -24,6 +24,7 @@ import { resolveImmigration, isLegalResident, tickTemporaryVisa, tickNationality
 import { ensureJudicial, openCivilCase, openCriminalCase, resolveJudicialYear } from './judicial.js';
 import { ensureBenefits, evaluateBenefits, unemploymentEntitlement } from './welfare.js';
 import { ensureHousing, resolveHousingYear } from './housing.js';
+import { resolveLanguageDevelopment } from './language.js';
 
 function clamp(v, lo = 1, hi = 100) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -313,6 +314,7 @@ export function advanceYear(state) {
   for (const line of migration.logs) { log.push(line); pushEvent(ch, 'political', line); }
   if (migration.died) { finalizeDeath(ch, country, log); return { log, died: true }; }
   country = COUNTRY_BY_ID[ch.countryId];
+  resolveLanguageDevelopment(ch,country);
 
   // 2. Education progression.
   for (const l of resolveEducation(ch, country, rng)) log.push(l);

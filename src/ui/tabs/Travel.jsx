@@ -3,7 +3,7 @@ import { COUNTRIES, COUNTRY_BY_ID, medianWage } from '../../engine/countries.js'
 import { immigrationOptions, naturalizationStatus, ROUTE_LABELS, pppConversionFactor, ensureImmigration } from '../../engine/immigration.js';
 import { applyForMigration, applyForCitizenship } from '../../engine/actions.js';
 import { money, titleCase } from '../format.js';
-import { naturalizationLanguageRequirement, primaryLanguages, workLanguageMultiplier } from '../../engine/language.js';
+import { languageProficiencyLabel, naturalizationLanguageRequirement, primaryLanguages, workLanguageMultiplier } from '../../engine/language.js';
 
 export default function Travel({ state, refresh }) {
   const ch = state.character;
@@ -54,8 +54,8 @@ export default function Travel({ state, refresh }) {
             <div className="muted" style={{fontSize:11,marginTop:5}}>{naturalization.dualAllowed?'This country permits modeled dual citizenship.':'Naturalizing here replaces prior citizenship in the model.'}</div>
           </>}
         </>}
-        <div className="kv"><span className="k">Languages</span><span className="v">{Object.entries(ch.languages||{}).map(([name,level])=>`${name} ${Math.round(level)}`).join(', ')||'Not recorded'}</span></div>
-        {workLanguageMultiplier(ch,current)<1&&<div className="muted" style={{color:'var(--bad)',marginTop:8}}>Local-language proficiency currently reduces civilian wages by {Math.round((1-workLanguageMultiplier(ch,current))*100)}%. Use Language study in Activities.</div>}
+        <div className="kv"><span className="k">Languages</span><span className="v">{Object.keys(ch.languages||{}).map(name=>`${name} — ${languageProficiencyLabel(ch,name)}`).join(', ')||'Not recorded'}</span></div>
+        {ch.age>=14&&workLanguageMultiplier(ch,current)<1&&<div className="muted" style={{color:'var(--bad)',marginTop:8}}>Local-language proficiency currently reduces civilian wages by {Math.round((1-workLanguageMultiplier(ch,current))*100)}%. Use Language study in Activities.</div>}
         {im.pending && <div style={{marginTop:12,padding:'10px',border:'1px solid var(--accent)'}}><strong>Pending:</strong> {ROUTE_LABELS[im.pending.route]} — {COUNTRY_BY_ID[im.pending.targetId]?.name}. Resolves when you age a year.</div>}
         {notice && <div className="muted" style={{marginTop:10}}>{notice}</div>}
       </div>

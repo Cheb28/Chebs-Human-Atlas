@@ -73,8 +73,8 @@ verification are implemented. Remaining optional depth is tracked in the expansi
 
 **Status: complete.** Dating compatibility, friendship, country-specific same-sex relationship
 profiles, relationship stages, pregnancy and family building, child development, caregiving,
-domestic-safety choices, estrangement/reconciliation/favoritism, inheritance-dispute risk, skill
-XP/levels, and education credentials are implemented and tested.
+domestic-safety choices, estrangement/reconciliation/favoritism, inheritance-dispute risk, recorded
+experience, accomplishments, and education credentials are implemented and tested.
 
 ## Phase 10.1 — Names and Legal Identity
 
@@ -85,7 +85,7 @@ family-name-first conventions according to country, culture, religion, and famil
 Multicultural families may draw from either parent's tradition without rigidly assigning every name
 by ethnicity or religion. The player can name children.
 
-Track birth name, current legal name, preferred display name, nickname, and previous names. Marriage
+Track birth name, current legal name, and previous names. Marriage
 offers keeping, adopting, appending, or combining surnames only where culturally and legally
 appropriate, including traditions in which spouses normally retain their birth names. Voluntary
 legal name changes depend on country eligibility, procedure, restrictions, and cost.
@@ -110,6 +110,27 @@ home. Their assets do not automatically become the adult player's net worth.
 **Verified:** family income and healthcare reconcile in annual statements; funded care is treated
 and billed, unaffordable care is reported as unmet, dependent coverage works, adulthood does not
 transfer the parents' fund, and all records survive save/export and restoration.
+
+## Phase 10.1.2 — Identity, Experience, Languages, and Settings
+
+**Status: complete.** Removed preferred-name and nickname fields. Voluntary legal-name changes now
+appear under Law → Civil and Legal Identity. Replaced visible XP and levels with academic performance,
+formal credentials, years of sector experience, management and business history, training, and
+accomplishments. Job, promotion, business, military, education, and immigration gates use those
+records, and old XP saves receive a conservative age-limited migration.
+
+Combined Studying and Reading into one annual activity. Country language lists now describe available
+languages rather than granting all of them at birth: household languages depend on family background,
+multinational parents may pass on a language, newborns begin with exposure, and school introduces the
+main instructional language. Corrected incomplete ethnicity lists so an unlisted majority remains
+possible instead of making every birth a listed minority.
+
+Save and Resume now lives in a Settings tab. Autosaving can be disabled or set to every 1, 5, or 10
+years while manual saves and JSON export remain available.
+
+**Verified:** no new character stores XP; work accumulates real years; credentials and performance
+gate education and careers; Turkish and Kurdish household cases differ correctly; multinational
+languages and old-save migration work; and all autosave intervals are covered by regression tests.
 
 ## Phase 10.2 — Interactive Map and Country Information
 
@@ -195,7 +216,7 @@ bundle warning; and GitHub Pages works without console, attribution, or accessib
 ## Deferred / non-goals (do not build unless asked)
 
 Additional optional depth is tracked in `EXPANSION_BACKLOG.md`. The original nine-phase playable
-roadmap and Phase 10 are complete. Phases 10.1 and 10.1.1 are complete; Phases 10.2–10.5 are planned personalization expansions; the
+roadmap and Phase 10 are complete. Phases 10.1–10.1.2 are complete; Phases 10.2–10.5 are planned personalization expansions; the
 annual employment expansion remains reserved as Phase 11.
 
 Multiplayer, real exchange rates, sub-national regions, deep social simulation, achievements/meta-progression, mobile layout (desktop-first; keep it responsive-friendly but don't invest), localization.

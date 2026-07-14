@@ -2,7 +2,6 @@ import { COUNTRY_BY_ID } from '../../engine/countries.js';
 import { canEnrollUniversity, canEnrollVocational, universityTuition, isEnrolledHigher } from '../../engine/education.js';
 import { enrollUniversity, enrollVocational, setPrivateSchool, setResistDropout } from '../../engine/actions.js';
 import { money } from '../format.js';
-import { skillLabel, skillLevel } from '../../engine/skills.js';
 
 const STAGE_LABELS = {
   preschool: 'Not yet in school', primary: 'Primary school', secondary: 'Secondary school',
@@ -23,7 +22,8 @@ export default function Education({ state, refresh }) {
       <div className="panel">
         <h3>Schooling</h3>
         <div className="kv"><span className="k">Stage</span><span className="v">{STAGE_LABELS[ed.stage] || ed.stage}</span></div>
-        <div className="kv"><span className="k">Academic experience</span><span className="v">{skillLabel(ch.skills.academic)}</span></div>
+        <div className="kv"><span className="k">Academic performance</span><span className="v">{Math.round(ed.performance??50)}/100</span></div>
+        <div className="kv"><span className="k">School years completed</span><span className="v">{ed.schoolYearsCompleted||0}</span></div>
         <div className="kv"><span className="k">Credentials</span><span className="v">{ed.credentials?.join(', ') || 'None'}</span></div>
         {isEnrolledHigher(ch) && <div className="kv"><span className="k">Years completed</span><span className="v">{ed.yearsInHigher}</span></div>}
         <div className="kv"><span className="k">Country education tier</span><span className="v">{country.educationTier} / 4</span></div>
@@ -33,7 +33,7 @@ export default function Education({ state, refresh }) {
             <span>Attend private school</span>
           </label>
           <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-            Family-funded at {money(country.gdpPerCapita * 0.55)}/yr; adds +2 Academic each school year.
+            Family-funded at {money(country.gdpPerCapita * 0.55)}/yr; improves yearly academic performance.
           </div>
         </>}
         {ch.age >= 6 && ch.age < 18 && country.educationTier <= 2 && ch.wealthIdx <= 1 && !ed.droppedOut && <>
@@ -54,7 +54,7 @@ export default function Education({ state, refresh }) {
 
         {!isEnrolledHigher(ch) && ch.age >= 16 && <>
           <div className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
-            University needs Academic level 5; vocational training needs level 3. Formal credentials unlock careers.
+            University needs academic performance of 60/100; vocational training needs 45/100. Formal credentials unlock careers.
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -72,7 +72,7 @@ export default function Education({ state, refresh }) {
               )}
             </div>
             {!uniOk && ch.age >= 18 && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-              {skillLevel(ch.skills.academic) < 5 ? 'Academic level too low.' : 'Not eligible right now.'}
+              {(ed.performance??50)<60?'Academic performance is below 60/100.':'Not eligible right now.'}
             </div>}
           </div>
 

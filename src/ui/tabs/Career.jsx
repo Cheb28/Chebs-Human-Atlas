@@ -46,9 +46,9 @@ export default function Career({ state, refresh }) {
         {!isMinor && !isStudent && !isMilitary && !isPrison && <>
           <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
             Choose a sector to look for work. The hire resolves when you advance the year
-            (chance depends on unemployment and your skills).
+            (chance depends on unemployment, qualifications, and relevant experience).
           </div>
-          {sectors.length === 0 && <div className="muted">No sectors open to you yet — build skills or finish school.</div>}
+          {sectors.length === 0 && <div className="muted">No sectors open to you yet — gain a qualification or finish school.</div>}
           {sectors.map(s => (
             <div key={s.key} className="world-item" onClick={() => { setJobSearch(state, s.key); refresh(); }}
               style={{ cursor: 'pointer', opacity: ch.jobSearch.sector === s.key ? 1 : 0.85 }}>

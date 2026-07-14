@@ -60,7 +60,7 @@ const korea = COUNTRY_BY_NAME['South Korea'];
   const ch = s.character;
   ch.age = 18;
   ch.stats.health = 100;
-  ch.skills.academic = 60;
+  ch.education.performance = 70;
   ch.education.stage = 'secondary_done';
   ch.employmentStatus = 'unemployed';
   enroll(ch, us, 'university', { useLoan: true });
@@ -105,17 +105,17 @@ const korea = COUNTRY_BY_NAME['South Korea'];
 {
   const s = newGame({ countryId: us.id, seed: 404 });
   s.character.age = 10;
-  s.character.selectedActivities = ['reading'];
+  s.character.selectedActivities = ['studying'];
   stepYear(s);
-  assert.deepEqual(s.character.selectedActivities, ['reading']);
+  assert.deepEqual(s.character.selectedActivities, ['studying']);
   s.character.age = 25;
   s.character.employmentStatus = 'unemployed';
-  s.character.selectedActivities = ['reading', 'gym', 'socializing', 'rest'];
+  s.character.selectedActivities = ['studying', 'gym', 'socializing', 'rest'];
   reconcileActivities(s.character, us);
   assert.equal(s.character.selectedActivities.length, 4);
   s.character.employmentStatus = 'military';
   reconcileActivities(s.character, us);
-  assert.deepEqual(s.character.selectedActivities, ['reading']);
+  assert.deepEqual(s.character.selectedActivities, ['studying']);
 }
 
 console.log('Regression checks passed.');

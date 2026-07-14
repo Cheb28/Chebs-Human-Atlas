@@ -86,17 +86,17 @@ export function generateName(rng,country,{sex='female',familyName='',givenName='
   return {given,family,full:formatName(given,family,profile),profileKey:profile.key,convention:profile.convention||'given-first'};
 }
 
-export function makeIdentity(nameParts,{nickname='',preferredName=''}={}){
+export function makeIdentity(nameParts){
   const full=clean(nameParts.full);
   return {birthName:full,currentLegalName:full,givenName:nameParts.given,familyName:nameParts.family,
-    preferredName:clean(preferredName)||full,nickname:clean(nickname,30),previousNames:[],profileKey:nameParts.profileKey,
+    previousNames:[],profileKey:nameParts.profileKey,
     convention:nameParts.convention||'given-first',pendingMarriageChoice:'keep'};
 }
 
-export function displayName(person){return person?.identity?.preferredName||person?.identity?.currentLegalName||person?.name||'Unnamed';}
+export function displayName(person){return person?.identity?.currentLegalName||person?.name||'Unnamed';}
 
 export function ensureIdentity(person,country,rng){
-  if(person.identity){person.name=person.identity.currentLegalName||person.name;return person.identity;}
+  if(person.identity){delete person.identity.preferredName;delete person.identity.nickname;person.name=person.identity.currentLegalName||person.name;return person.identity;}
   rng=isolatedRng(rng,person.id||`${person.relation||'person'}-${person.sex||''}-${country?.id||''}`);
   const profile=namingProfile(country,person);
   const parsed=person.name?partsFromFull(person.name,profile):generateName(rng,country,person);
@@ -168,7 +168,6 @@ export function setLegalName(ch,newName,reason,country){
   ch.identity.previousNames.push({name:ch.identity.currentLegalName,age:ch.age,reason});
   const profile=namingProfile(country,ch),parts=partsFromFull(next,profile);
   ch.identity.currentLegalName=next;ch.identity.givenName=parts.given;ch.identity.familyName=parts.family;
-  if(!ch.identity.preferredName||ch.identity.preferredName===ch.name)ch.identity.preferredName=next;
   ch.name=next;return true;
 }
 
@@ -181,9 +180,7 @@ export function requestLegalNameChange(ch,country,newName){
   return{ok:true,message:`Your legal name is now ${ch.identity.currentLegalName}.`};
 }
 
-export function setPreferredName(ch,value){const v=clean(value);if(!v)return false;ch.identity.preferredName=v;return true;}
-export function setNickname(ch,value){ch.identity.nickname=clean(value,30);return true;}
-export function setChildName(ch,id,value,country){const child=ch.family.find(p=>p.id===id&&p.relation==='Child');const v=clean(value);if(!child||!v)return false;ensureIdentity(child,country,{pick:a=>a[0]});child.identity.preferredName=v;child.identity.currentLegalName=v;child.name=v;return true;}
+export function setChildName(ch,id,value,country){const child=ch.family.find(p=>p.id===id&&p.relation==='Child');const v=clean(value);if(!child||!v)return false;ensureIdentity(child,country,{pick:a=>a[0]});child.identity.currentLegalName=v;child.name=v;return true;}
 
 export function hydrateNames(ch,rng){
   const country=COUNTRY_BY_ID[ch.countryId];if(!country)return ch;

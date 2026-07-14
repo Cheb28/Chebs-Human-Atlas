@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { COUNTRY_BY_ID } from '../../engine/countries.js';
 import { eligibleBeneficiaries, inheritanceRules, settleEstate } from '../../engine/inheritance.js';
 import { CRIMES, ensureJudicial, lawProfile } from '../../engine/judicial.js';
-import { clearWill, setPlannedCrime, setWillShare } from '../../engine/actions.js';
+import { changeLegalName, clearWill, setPlannedCrime, setWillShare } from '../../engine/actions.js';
+import { nameChangeProfile } from '../../engine/names.js';
 import { money, titleCase } from '../format.js';
 
 export default function Law({ state, refresh }) {
@@ -15,6 +17,9 @@ export default function Law({ state, refresh }) {
   const total = beneficiaries.reduce((sum, b) => sum + (Number(ch.will?.shares?.[b.id]) || 0), 0);
   const activeRecords = judicial.records.filter(r => !r.overturned && r.expiresAge > ch.age);
   const unavailable = ch.age < 14 || judicial.status === 'prison' || !!judicial.activeCase;
+  const [legalName,setLegalName]=useState(ch.identity?.currentLegalName||ch.name||'');
+  const [identityMessage,setIdentityMessage]=useState('');
+  const changeProfile=nameChangeProfile(country,ch);
 
   return (
     <div className="grid cols-2">
@@ -43,6 +48,16 @@ export default function Law({ state, refresh }) {
         {activeRecords.map(r => <div className="world-item" key={r.caseId} style={{ marginTop: 8 }}>
           <span className="nm">{r.offence}</span><span className="rg">expires at age {r.expiresAge}</span>
         </div>)}
+      </div>
+
+      <div className="panel">
+        <h3>Civil and Legal Identity</h3>
+        <div className="kv"><span className="k">Birth name</span><span className="v">{ch.identity?.birthName}</span></div>
+        <div className="kv"><span className="k">Current legal name</span><span className="v">{ch.identity?.currentLegalName}</span></div>
+        <div className="field"><label htmlFor="legal-name">Apply for a legal name change</label><input id="legal-name" maxLength="60" value={legalName} onChange={e=>setLegalName(e.target.value)}/><button disabled={!changeProfile.available} onClick={()=>{const result=changeLegalName(state,legalName);setIdentityMessage(result.message);refresh();}}>Submit application · {money(changeProfile.cost)}</button></div>
+        <div className="muted" style={{fontSize:12}}>{changeProfile.label}. {changeProfile.note}</div>
+        {(ch.identity?.previousNames||[]).map((x,i)=><div className="kv" key={`${x.age}-${i}`}><span className="k">Previous name · age {x.age}</span><span className="v">{x.name} ({x.reason})</span></div>)}
+        {identityMessage&&<div className="notice" role="status">{identityMessage}</div>}
       </div>
 
       <div className="panel">

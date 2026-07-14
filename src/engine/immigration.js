@@ -1,7 +1,7 @@
 import { COUNTRIES, COUNTRY_BY_ID, COUNTRY_BY_NAME, locationsFor, medianWage } from './countries.js';
 import { enroll } from './education.js';
 import { destinationLanguageLevel, ensureLanguages, naturalizationLanguageRequirement, primaryLanguages } from './language.js';
-import { skillLevel } from './skills.js';
+import { ensureExperience, sectorYears, vocationalYears } from './experience.js';
 
 const BLOCS = [
   { id: 'eu-eea', label: 'EU / EEA / Switzerland', members: ['Austria','Belgium','Bulgaria','Croatia','Cyprus','Czechia','Denmark','Estonia','Finland','France','Germany','Greece','Hungary','Iceland','Ireland','Italy','Latvia','Liechtenstein','Lithuania','Luxembourg','Malta','Netherlands','Norway','Poland','Portugal','Romania','Slovakia','Slovenia','Spain','Sweden','Switzerland'] },
@@ -162,22 +162,24 @@ export function immigrationOptions(ch, state, target) {
   const holidayEligible = ch.age >= 18 && ch.age <= 30 && citizenNames.some(name=>whPartners.includes(name))
     && !ch.immigration.history.some(h=>h.route==='working_holiday'&&h.toId===target.id);
   const currentName=from.name;
+  ensureExperience(ch);
+  const relevantYears=Math.max(vocationalYears(ch),sectorYears(ch,'service'),sectorYears(ch,'professional'));
   const caricomSkills=CARICOM_CSME.includes(currentName)&&CARICOM_CSME.includes(target.name)
-    && currentName!==target.name&&Math.max(skillLevel(ch.skills.academic),skillLevel(ch.skills.vocational))>=4;
+    && currentName!==target.name&&(ch.education?.degree||ch.education?.vocational||relevantYears>=3);
   const routes = [
     { id:'treaty', label:ROUTE_LABELS.treaty, cost:medianWage(target)*0.05, immediate:true,
       eligible:!!treaty, reason:treaty ? treaty.label : 'No shared freedom-of-movement bloc.' },
     { id:'regional_residence',label:ROUTE_LABELS.regional_residence,cost:medianWage(target)*.08,immediate:true,
       eligible:!!residenceAgreement,reason:residenceAgreement?`${residenceAgreement.label}: two years of temporary residence with work rights, then apply for permanent residence.`:'No shared regional residence agreement.'},
     { id:'skilled', label:ROUTE_LABELS.skilled, cost:fee, wait:1,
-      eligible:caricomSkills||(!!ch.education?.degree && Math.max(skillLevel(ch.skills.academic), skillLevel(ch.skills.vocational)) >= 6 && target.incomeTier >= from.incomeTier),
-      reason:caricomSkills?'CARICOM skilled-movement category modeled at Academic or Vocational level 4+.':'Requires a university degree, Academic or Vocational level 6+, and a destination at least as wealthy as your current country.' },
+      eligible:caricomSkills||(!!ch.education?.degree && sectorYears(ch,'professional')>=2 && target.incomeTier >= from.incomeTier),
+      reason:caricomSkills?'CARICOM skilled-movement category modeled with a recognized qualification or three years of relevant experience.':'Requires a university degree, two years of professional experience, and a destination at least as wealthy as your current country.' },
     { id:'student', label:ROUTE_LABELS.student, cost:medianWage(target)*0.2, wait:1,
-      eligible:skillLevel(ch.skills.academic) >= 5 && !ch.education?.degree && ch.age >= 18,
-      reason:`Requires Academic level 5+ and foreign-university admission. Modeled work limit: ${Math.round(studentWorkFraction(target)*40)} hours/week equivalent.` },
+      eligible:(ch.education?.performance??50)>=60 && !ch.education?.degree && ch.age >= 18,
+      reason:`Requires completed secondary education with adequate academic performance and foreign-university admission. Modeled work limit: ${Math.round(studentWorkFraction(target)*40)} hours/week equivalent.` },
     { id:'temporary_work', label:ROUTE_LABELS.temporary_work, cost:medianWage(target)*0.3, wait:1,
-      eligible:ch.age>=18&&Math.max(skillLevel(ch.skills.vocational),skillLevel(ch.skills.academic))>=3,
-      reason:`Requires Academic or Vocational level 3+. Employer-tied permission lasts ${target.lawTier==='strong'?3:2} years and does not initially count toward naturalization.` },
+      eligible:ch.age>=18&&(relevantYears>=2||ch.education?.vocational),
+      reason:`Requires a vocational qualification or two years of relevant employment. Employer-tied permission lasts ${target.lawTier==='strong'?3:2} years and does not initially count toward naturalization.` },
     { id:'working_holiday', label:ROUTE_LABELS.working_holiday, cost:medianWage(target)*0.12, wait:1,
       eligible:holidayEligible,
       reason:WORKING_HOLIDAY_PARTNERS[target.name]
@@ -250,7 +252,7 @@ export function moveCharacter(ch, target, route, age, { irregular=false, student
   // Queue destination work for routes whose permission already implies a
   // temporary job, so their first permitted year is not lost to another turn.
   if (route === 'working_holiday') ch.jobSearch.sector='informal';
-  if (route === 'temporary_work') ch.jobSearch.sector=ch.skills.vocational>=ch.skills.academic?'industrial':'service';
+  if (route === 'temporary_work') ch.jobSearch.sector=vocationalYears(ch)>Math.max(sectorYears(ch,'service'),sectorYears(ch,'professional'))?'industrial':'service';
   im.languagePenaltyYears=sharesLanguage(ch,target)?0:1;
   if(destinationLanguageLevel(ch,target)<60)ch.languageStudyTarget=primaryLanguages(target)[0]||null;
   im.history.push({age,fromId:from.id,toId:target.id,route,status:im.residence.status,pppFactor:factor});

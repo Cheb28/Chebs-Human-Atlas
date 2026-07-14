@@ -15,6 +15,7 @@ export const TABS = [
   { id: 'law', label: 'Law', phase: 4 },
   { id: 'events', label: 'Events', phase: 3 },
   { id: 'world', label: 'World', phase: 1 },
+  { id: 'settings', label: 'Settings', phase: 1 },
 ];
 
 export default function TabBar({ active, onChange, badges = {} }) {

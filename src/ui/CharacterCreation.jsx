@@ -94,6 +94,7 @@ export default function CharacterCreation({ onStart, saveTools }) {
             <label htmlFor="birth-ethnicity">Ethnicity in {country.name}</label>
             <select id="birth-ethnicity" value={ethnicity} onChange={e => setEthnicity(e.target.value)}>
               <option value="">Random from local demographics</option>
+              {(country.ethnicGroups.reduce((sum,x)=>sum+x.pct,0)<99||country.ethnicGroups.length===0)&&<option value="Local">Local majority / other</option>}
               {country.ethnicGroups.map(x => <option key={x.name} value={x.name}>{x.name}</option>)}
             </select>
           </div>

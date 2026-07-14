@@ -41,9 +41,8 @@ manual.character.family.push(child);
 assert.equal(setChildName(manual.character,child.id,'Jordan Rivers',us),true);
 assert.equal(child.identity.currentLegalName,'Jordan Rivers');
 
-manual.character.identity.preferredName='Lex';
 const restored=deserialize(serialize(manual));
-assert.equal(restored.character.identity.preferredName,'Lex');
+assert.equal(restored.character.identity.preferredName,undefined);
 assert.equal(restored.character.family.find(p=>p.id===child.id).name,'Jordan Rivers');
 
 manual.character.stats.charisma=100;

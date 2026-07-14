@@ -9,7 +9,6 @@ import {
   setMarriageNameChoice,nameChild,
 } from '../../engine/actions.js';
 import { ensureHousing } from '../../engine/housing.js';
-import { skillLabel } from '../../engine/skills.js';
 import { money, titleCase } from '../format.js';
 import { displayName, marriageNameChoices } from '../../engine/names.js';
 
@@ -82,7 +81,7 @@ export default function Family({ state, refresh }) {
       {children.map(p=><div className="subcard" key={p.id}>
         <div className="kv"><strong>{displayName(p)} · {titleCase(p.sex)}</strong><span>{p.alive?`Age ${personAge(ch,p)} · relationship ${Math.round(p.relationshipScore)}`:'Deceased'}</span></div>
         {p.alive&&<div className="field"><label htmlFor={`child-name-${p.id}`}>Name this child</label><input id={`child-name-${p.id}`} maxLength="60" defaultValue={p.name||''} onBlur={e=>{nameChild(state,p.id,e.target.value);refresh();}}/></div>}
-        {p.alive&&<><div className="muted">{titleCase(p.origin||'birth')} · {(p.personality||[]).map(titleCase).join(', ')||'personality developing'} · {p.educationOutcome||'not school age'}</div><div className="muted">Academic {skillLabel(p.skills?.academic)} · {p.career||'no career yet'} · {p.partnerStatus||'single'} · {p.ownChildren||0} children</div><div className="muted">{p.atHome===false?'Moved out':'At home'}{p.working?' · working':''} · {money(p.personalSavings||0)} saved{p.favoritism&&p.favoritism!=='neutral'?` · ${p.favoritism}`:''}{p.estranged?' · estranged':''}</div>{p.estranged&&<button disabled={ch.familyPlans.reconciliationId===p.id} onClick={action(()=>requestReconciliation(state,p.id),refresh)}>Attempt reconciliation</button>}</>}
+        {p.alive&&<><div className="muted">{titleCase(p.origin||'birth')} · {(p.personality||[]).map(titleCase).join(', ')||'personality developing'} · {p.educationOutcome||'not school age'}</div><div className="muted">Academic performance {Math.round(p.educationPerformance??50)}/100 · {(p.credentials||[]).join(', ')||'no credential'} · {p.career||'no career yet'} · {p.partnerStatus||'single'} · {p.ownChildren||0} children</div><div className="muted">{p.atHome===false?'Moved out':'At home'}{p.working?' · working':''} · {money(p.personalSavings||0)} saved{p.favoritism&&p.favoritism!=='neutral'?` · ${p.favoritism}`:''}{p.estranged?' · estranged':''}</div>{p.estranged&&<button disabled={ch.familyPlans.reconciliationId===p.id} onClick={action(()=>requestReconciliation(state,p.id),refresh)}>Attempt reconciliation</button>}</>}
         {(p.grandchildren||[]).map(g=><div className="muted" key={g.id}>↳ {displayName(g)} · grandchild</div>)}
       </div>)}
       {children.length>0&&<div className="subcard"><strong>Working-child contributions</strong><label className="kv"><span>Under 18</span><select value={housing.teenContributionRate} onChange={e=>{setHouseholdContribution(state,'teen',e.target.value);refresh();}}>{[0,.1,.25,.5].map(v=><option key={v} value={v}>{v*100}%</option>)}</select></label><label className="kv"><span>Adult child at home</span><select value={housing.adultChildContributionRate} onChange={e=>{setHouseholdContribution(state,'adult',e.target.value);refresh();}}>{[0,.1,.25,.5].map(v=><option key={v} value={v}>{v*100}% board</option>)}</select></label></div>}

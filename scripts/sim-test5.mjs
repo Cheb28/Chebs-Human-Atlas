@@ -37,7 +37,7 @@ const parent = newGame({ seed: 507, countryId: 'us', locationName: 'Chicago', we
 parent.character.age = 30;
 parent.character.employmentStatus = 'employed';
 parent.character.job = { sector: 'professional', rung: 1 };
-parent.character.family.push({ id:'baby', relation:'Child', childNumber:1, alive:true, ageOffset:30, relationshipScore:70, stats:{health:60,happiness:60,intelligence:50,fitness:50,charisma:50}, skills:{academic:0,vocational:0,business:0,political:0} });
+parent.character.family.push({ id:'baby', relation:'Child', childNumber:1, alive:true, ageOffset:30, relationshipScore:70, stats:{health:60,happiness:60,intelligence:50,fitness:50,charisma:50} });
 stepYear(parent);
 assert(parent.character.lastStatement.expenses.some(x => x.label === 'Child essentials'), 'child essentials are itemized');
 assert(parent.character.lastStatement.expenses.some(x => x.label.startsWith('Daycare')), 'working single parent receives an itemized subsidized daycare cost');

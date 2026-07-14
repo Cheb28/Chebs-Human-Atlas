@@ -6,7 +6,7 @@ import { altServiceAvailable, universityDefermentAllowed, serviceYearsFor } from
 // choosing, the default applies. Draft has country-specific options; others carry
 // their own `options` array.
 function draftOptions(country,ch) {
-  const opts = [{ id: 'serve', label: 'Serve', desc: `${serviceYearsFor(ch,country)} yr(s), +fitness & skills` }];
+  const opts = [{ id: 'serve', label: 'Serve', desc: `${serviceYearsFor(ch,country)} yr(s), fitness and recorded military training` }];
   if (universityDefermentAllowed(country)) opts.push({ id: 'defer', label: 'Defer (study)', desc: 'delay via university' });
   if (altServiceAvailable(country)) opts.push({ id: 'alternative', label: 'Civilian service', desc: 'longer, no combat' });
   opts.push({ id: 'evade', label: 'Evade', desc: 'risky — fines or prison if caught' });

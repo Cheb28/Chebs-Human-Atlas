@@ -52,7 +52,7 @@ console.log('\n=== NaN/undefined scan (5 sample characters) ===');
       }
     };
     check(ch.stats, `${ch.countryName}.stats.`);
-    check(ch.skills, `${ch.countryName}.skills.`);
+    check(ch.experience, `${ch.countryName}.experience.`);
   }
-  console.log(bad === 0 ? '  no NaN/undefined in stats/skills' : `  ${bad} issues`);
+  console.log(bad === 0 ? '  no NaN/undefined in stats/experience' : `  ${bad} issues`);
 }

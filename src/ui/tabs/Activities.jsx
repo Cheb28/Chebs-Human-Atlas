@@ -6,7 +6,7 @@ import { setPartTimeWork } from '../../engine/actions.js';
 import { laborProfile, teenPartTimeIncome } from '../../engine/labor.js';
 import { money } from '../format.js';
 import { visaWorkFraction } from '../../engine/immigration.js';
-import { primaryLanguages, languageLevel } from '../../engine/language.js';
+import { languageLevel, primaryLanguages, languageProficiencyLabel } from '../../engine/language.js';
 
 // Activities tab: checkboxes limited by slot budget + lifestyle selector.
 export default function Activities({ state, refresh }) {
@@ -47,7 +47,7 @@ export default function Activities({ state, refresh }) {
           <label className="muted" style={{fontSize:12}}>Language to learn&nbsp;
             <select value={ch.languageStudyTarget||''} onChange={e=>{ch.languageStudyTarget=e.target.value||null;refresh();}}>
               <option value="">Choose a primary local language</option>
-              {localLanguages.map(lang=><option value={lang} key={lang}>{lang} ({Math.round(languageLevel(ch,lang))}/100)</option>)}
+              {localLanguages.filter(lang=>languageLevel(ch,lang)<100).map(lang=><option value={lang} key={lang}>{lang} ({languageProficiencyLabel(ch,lang)})</option>)}
             </select>
           </label>
         </div>}

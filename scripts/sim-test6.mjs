@@ -30,7 +30,8 @@ const skilled = newGame({ countryId:nigeria.id, seed:6101, wealthClass:'Middle' 
 Object.assign(skilled.character,{age:22,employmentStatus:'unemployed'});
 skilled.character.education.degree=true;
 skilled.character.education.stage='graduated';
-skilled.character.skills.academic=65;
+skilled.character.experience.sectors.professional=2;
+skilled.character.education.performance=75;
 skilled.character.money.bank=medianWage(nigeria)*20;
 let routes=immigrationOptions(skilled.character,skilled,germany);
 assert.equal(routes.find(r=>r.id==='skilled').eligible,true,'qualified Nigerian graduate can use German skilled route');
@@ -112,7 +113,7 @@ assert.equal(setPartTimeWork(student,true),true,'adult foreign students can choo
 assert.equal(student.character.partTimeWork,true);
 
 const sponsored=newGame({countryId:us.id,seed:6108,wealthClass:'Middle'});
-sponsored.character.age=28;sponsored.character.skills.vocational=55;sponsored.character.skills.academic=40;
+sponsored.character.age=28;sponsored.character.experience.sectors.industrial=4;
 moveCharacter(sponsored.character,germany,'temporary_work',28,{});
 assert.equal(sponsored.character.immigration.residence.visa.employerTied,true);
 assert.equal(sponsored.character.immigration.residence.visa.countsForResidency,false);

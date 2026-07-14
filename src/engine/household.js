@@ -5,6 +5,7 @@ import { ensureHousing } from './housing.js';
 import { laborProfile } from './labor.js';
 import { makeRng } from './rng.js';
 import { displayName } from './names.js';
+import { ensureExperience } from './experience.js';
 
 const OCCUPATIONS = {
   professional:['Office professional','Teacher','Technical specialist','Healthcare worker'],
@@ -40,6 +41,7 @@ function familyCoverage(country,person,ch){
 
 export function ensureMemberEconomy(person,ch,country,rng){
   const age=ageOf(ch,person),r=memberRng(rng,person,ch,'initialize');
+  ensureExperience(person);
   person.finances||={employmentStatus:'child',sector:null,occupation:null,wageMult:0,annualGrossIncome:0,personalSavings:person.personalSavings||0,householdContribution:0,yearsWorked:0,lastYear:null};
   person.finances.personalSavings??=person.personalSavings||0;
   person.health||={score:person.stats?.health??70,conditions:[],insured:false,medicalHistory:[],lastYear:{status:'No care needed',cost:0,treated:true}};

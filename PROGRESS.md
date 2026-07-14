@@ -2,7 +2,24 @@
 
 Handoff notes for whoever continues this build (see `START_HERE.txt` first, then `docs/`).
 
-## Current status: Phase 10.1.1 COMPLETE — Household Economy and Family Healthcare
+## Current status: Phase 10.1.2 COMPLETE — Identity, Experience, Languages, and Settings
+
+### Phase 10.1.2 — Identity, Experience, Languages, and Settings
+
+- Removed preferred names and nicknames. Legal-name applications moved to Law under Civil and Legal
+  Identity, while birth names, current legal names, marriage changes, and previous-name history remain.
+- Removed XP and levels from new characters. Education uses performance and credentials; careers use
+  actual sector, management, business, civic, and training years plus recorded accomplishments.
+- Updated job, promotion, education, business, military, immigration, heir, and old-save logic to use
+  qualifications and experience. Legacy XP converts conservatively without impossible work histories.
+- Combined Studying and Reading into Studying & Reading, affecting intelligence, academic performance,
+  and happiness.
+- Household languages now depend on family/ethnic context. Newborns begin with exposure, schools add
+  the main local language, multinational parents can pass on a language, and country lists no longer
+  make everyone automatically bilingual. Missing majority ethnicity shares are handled explicitly.
+- Save & Resume moved from Overview to Settings. Autosaving supports Off, every year, every 5 years,
+  or every 10 years, while manual saves and JSON export remain available.
+- Added Phase 10.1.2 regression coverage and retained full-suite, full-life, and build verification.
 
 ### Phase 10.1.1 — Household Economy and Family Healthcare
 
@@ -23,7 +40,7 @@ Handoff notes for whoever continues this build (see `START_HERE.txt` first, then
   national and regional naming traditions, including family-name-first and double-surname profiles.
 - Parents, siblings, partners, spouses, friends, children, and grandchildren now receive persistent
   names. Multinational parents use their own country profile, while household surnames stay coherent.
-- Added birth, current legal, preferred display, nickname, and previous-name records. Adult legal-name
+- Added birth, current legal, and previous-name records. Adult legal-name
   changes use simplified country availability, procedure, and fee profiles.
 - Engagement offers only culturally appropriate keep/adopt/append/combine surname choices. Countries
   and traditions where spouses normally retain birth names expose only the keep-name choice.
@@ -52,8 +69,8 @@ Handoff notes for whoever continues this build (see `START_HERE.txt` first, then
   abuse warnings, help/safety planning, and leaving options.
 - Unequal wills, estrangement, and poor family relationships now produce a visible inheritance-dispute
   risk. Added Phase 10 regression coverage for all major systems.
-- Replaced capped 0–100 skills with uncapped XP and practical levels. Education now records formal
-  credentials such as a bachelor's degree or vocational certificate.
+- Replaced abstract skill points with recorded experience, accomplishments, academic performance,
+  and formal credentials such as a bachelor's degree or vocational certificate.
 
 ## Previous status: Phase 9 COMPLETE — roadmap implementation complete
 
@@ -117,7 +134,7 @@ Handoff notes for whoever continues this build (see `START_HERE.txt` first, then
 - Corrected regional mobility distinctions: MERCOSUR and Andean nationality routes now provide a
   two-year temporary residence/work stage before permanent conversion; EAC uses the same permit
   structure. Added OECS full movement, narrowed unrestricted CARICOM to the four-country October
-  2025 arrangement, and retained wider CARICOM as a skills-based route.
+  2025 arrangement, and retained wider CARICOM as a qualification/experience-based route.
 - Added the Italy–Japan working-holiday agreement effective April 2026. Australian working-holiday
   holders can spend an activity slot on paid specified regional work: 3 months/88 days unlocks year
   two and 6 months during year two unlocks year three. The UI also states the four-month study cap.
@@ -246,7 +263,7 @@ Handoff notes for whoever continues this build (see `START_HERE.txt` first, then
   share from its legal system. Wills accept uneven percentage weights; no will means equal shares.
 - Death now settles a visible estate, applies tax and succession rules, shows the family tree, and
   offers **Continue as child** for every living child. The selected child keeps their current age,
-  generated stats/skills, family relationships, country, and inheritance as generation 2+.
+  generated stats/experience, family relationships, country, and inheritance as generation 2+.
 - Fixed the pre-Phase-4 child-age offset bug: siblings shown at birth are now already-born siblings,
   and dependent-child ages use the correct offset direction.
 - Added `sim-test4.mjs`: verifies dating → marriage → child, country rights tiers, inheritance tax,
@@ -397,7 +414,7 @@ non-blocking `DraftBanner`. Run `node scripts/sim-test2.mjs` for the Phase 2 hea
 - Pipeline emits exactly 208; spot checks pass (Germany 62800 / natYears 8 / voluntary; SK mandatory; Costa Rica no army; Nigeria→Lagos; West Bank manual cities; EU excluded).
 - Mortality calibration: median death age within ±2 yrs of life expectancy across US/DE/NG/KR/MC/JP/IN (400 lives each).
 - Born-anywhere skews correctly toward Africa + South Asia (real birth-rate weighting).
-- No NaN/undefined in stats/skills; no console errors.
+- No NaN/undefined in stats/experience; no console errors.
 - In-browser: created lives via both Customize (Germany→Munich) and Born-anywhere (Iraq→Baghdad); advanced single-step (age 6→7) and to death (age 54); milestones logged; death → life-summary with timeline; restart works; World tab browses all 208 with correct detail (verified Japan).
 
 ## Deviations / decisions made during Phase 1
