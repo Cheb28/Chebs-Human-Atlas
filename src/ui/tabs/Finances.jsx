@@ -16,7 +16,7 @@ function Sparkline({ data }) {
   return <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none"><polyline points={pts} fill="none" stroke="var(--accent)" strokeWidth="1.5" /></svg>;
 }
 
-export default function Finances({ state, refresh }) {
+export default function Finances({ state, refresh, actionFeedback }) {
   const ch = state.character, country = COUNTRY_BY_ID[ch.countryId], st = ch.lastStatement;
   const [section,setSection]=useState('summary');
   const [amount, setAmount] = useState(Math.round(medianWage(country) * 0.1));
@@ -28,7 +28,7 @@ export default function Finances({ state, refresh }) {
   const financial=ensureFinancialState(ch,country),bank=bankProfile(country),taxModel=taxProfile(country);
   const homePrice = localHomePrice(country, ch);
   const homeDue = country.incomeTier >= 3 ? homePrice * 0.2 : homePrice;
-  const transact = fn => { fn(); refresh(); };
+  const transact = (fn, success='Financial action completed.') => actionFeedback ? actionFeedback(fn,{success}) : (fn(),refresh());
 
   const sections=[['summary','Summary'],['accounts','Accounts'],['debt','Debt & Credit'],['assets','Assets & Goals'],['taxes','Taxes'],['statements','Statements']];
   return <div className={`finance-page finance-${section}`}>

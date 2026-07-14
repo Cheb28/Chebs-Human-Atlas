@@ -9,7 +9,7 @@ const STAGE_LABELS = {
   graduated: 'Graduated', dropout: 'Left school early', workforce: 'In the workforce',
 };
 
-export default function Education({ state, refresh }) {
+export default function Education({ state, refresh, actionFeedback }) {
   const ch = state.character;
   const country = COUNTRY_BY_ID[ch.countryId];
   const ed = ch.education;
@@ -64,11 +64,11 @@ export default function Education({ state, refresh }) {
               {tuition.loanable && tuition.annual > 0 ? ' — student loan available' : ''}
             </div>
             <div className="row">
-              <button className="primary" disabled={!uniOk} onClick={() => { enrollUniversity(state, false); refresh(); }}>
+              <button className="primary" title={!uniOk?'Requires age 18, completed secondary school, and academic performance of 60 or higher.':''} disabled={!uniOk} onClick={() => actionFeedback(()=>enrollUniversity(state, false),{success:'University enrollment started.',failure:'You do not currently meet the university requirements.'})}>
                 Enroll{tuition.annual > 0 ? ' (pay tuition)' : ''}
               </button>
               {tuition.loanable && tuition.annual > 0 && (
-                <button disabled={!uniOk} onClick={() => { enrollUniversity(state, true); refresh(); }}>Enroll with loan</button>
+                <button title={!uniOk?'Requires age 18, completed secondary school, and academic performance of 60 or higher.':''} disabled={!uniOk} onClick={() => actionFeedback(()=>enrollUniversity(state, true),{success:'University enrollment and student loan started.',failure:'You do not currently meet the university requirements.'})}>Enroll with loan</button>
               )}
             </div>
             {!uniOk && ch.age >= 18 && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
@@ -78,7 +78,7 @@ export default function Education({ state, refresh }) {
 
           <div>
             <div style={{ fontWeight: 600, marginBottom: 4 }}>Vocational training (2 years)</div>
-            <button disabled={!vocOk} onClick={() => { enrollVocational(state); refresh(); }}>Enroll in vocational program</button>
+            <button title={!vocOk?'Requires sufficient age, completed schooling, and academic performance of 45 or higher.':''} disabled={!vocOk} onClick={() => actionFeedback(()=>enrollVocational(state),{success:'Vocational enrollment started.',failure:'You do not currently meet the vocational requirements.'})}>Enroll in vocational program</button>
           </div>
         </>}
       </div>

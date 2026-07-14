@@ -350,6 +350,23 @@ return, enforced passport restrictions, and corrected Germany/Japan mortality ca
 critical, major, minor, and deliberately deferred findings are recorded in
 `STABILIZATION_AUDIT_10_4_1D.md`.
 
+### Phase 10.4.1D — Action Feedback, Visual Calm, and Release Testing
+
+**Status: complete.** Important actions across work, education, business, family, finance, law,
+religion, migration, vehicles, licences, insurance, and travel documents now produce a consistent
+success or failure message. Engine-provided reasons take priority, unexpected action errors do not
+advance the life, and temporary messages dismiss automatically. Disabled high-impact buttons explain
+their missing requirement where practical.
+
+The interface adds restrained status chips, clearer empty states, quieter unavailable controls,
+responsive two-column panels, and expandable migration requirements. These changes preserve the
+existing navigation and visual identity while reducing the amount of secondary detail shown at once.
+
+The final gate covers feedback success/failure/error behavior, complicated save export/import and
+deterministic resume, the full Phase 1–10.4 suite, 280 complete lives, every playable country, more
+than 20,000 exact one-year turns, mortality calibration, production build, and deployed-browser smoke
+testing.
+
 ### Phase 10.4.2 — Christianity
 
 **Status: planned.** Add Catholic, Orthodox, Protestant, and locally important Christian practice,

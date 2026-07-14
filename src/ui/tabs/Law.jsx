@@ -6,7 +6,7 @@ import { changeLegalName, clearWill, filePersonalBankruptcy, setPlannedCrime, se
 import { nameChangeProfile } from '../../engine/names.js';
 import { money, titleCase } from '../format.js';
 
-export default function Law({ state, refresh }) {
+export default function Law({ state, refresh, actionFeedback }) {
   const ch = state.character;
   const country = COUNTRY_BY_ID[ch.countryId];
   const rules = inheritanceRules(country);
@@ -36,7 +36,7 @@ export default function Law({ state, refresh }) {
 
       <div className="panel">
         <h3>Your Legal Status</h3>
-        <div className="kv"><span className="k">Status</span><span className="v">{titleCase(judicial.status.replaceAll('_', ' '))}</span></div>
+        <div className="kv"><span className="k">Status</span><span className={`status ${judicial.status==='free'?'status-good':judicial.status==='prison'||judicial.status==='fugitive'?'status-bad':'status-warn'}`}>{titleCase(judicial.status.replaceAll('_', ' '))}</span></div>
         {judicial.activeCase && <div className="kv"><span className="k">Active case</span><span className="v">{judicial.activeCase.label || titleCase(judicial.activeCase.civilKind)}</span></div>}
         {judicial.investigation&&<><div className="kv"><span className="k">Investigation</span><span className="v">{judicial.investigation.label}</span></div><div className="kv"><span className="k">Travel restriction</span><span className="v">{judicial.investigation.exitRestricted?'Court-restricted':'No formal restriction'}</span></div></>}
         {judicial.warrant&&<><div className="kv"><span className="k">Outstanding warrant</span><span className="v">{judicial.warrant.label}</span></div><div className="kv"><span className="k">International return risk</span><span className="v">{judicial.warrant.extraditable?'Extradition may be requested':'Not treated as an extraditable offence'}</span></div></>}
@@ -47,7 +47,7 @@ export default function Law({ state, refresh }) {
         <div className="kv"><span className="k">Active records</span><span className="v">{activeRecords.length}</span></div>
         <div className="kv"><span className="k">Outstanding court debt</span><span className="v">{money(judicial.finesOwed || 0)}</span></div>
         <div className="kv"><span className="k">Bankruptcy-eligible debt</span><span className="v">{money(bankruptcyDebt)}</span></div>
-        <button disabled={!canFileBankruptcy||judicial.bankruptcyDue>0} onClick={()=>{filePersonalBankruptcy(state);refresh();}}>{judicial.bankruptcyDue>0?'Bankruptcy filing queued':'File for personal bankruptcy'}</button>
+        <button title={!canFileBankruptcy?'Requires adulthood, sufficient eligible debt, and no active criminal matter.':judicial.bankruptcyDue>0?'A filing is already queued.':''} disabled={!canFileBankruptcy||judicial.bankruptcyDue>0} onClick={()=>actionFeedback(()=>filePersonalBankruptcy(state),{success:'Bankruptcy filing queued for the next yearly court cycle.',failure:'You do not currently meet the bankruptcy filing requirements.'})}>{judicial.bankruptcyDue>0?'Bankruptcy filing queued':'File for personal bankruptcy'}</button>
         <div className="muted" style={{fontSize:11}}>A filing becomes a civil-law decision next year. The court may discharge consumer, business, and tax debt according to the local legal system; fees and consequences still apply.</div>
         {(judicial.barredUntilAge || 0) > ch.age && <div className="muted" style={{ marginTop: 10, fontSize: 12 }}>
           Most legal immigration and naturalization routes are restricted until age {judicial.barredUntilAge}.
@@ -61,7 +61,7 @@ export default function Law({ state, refresh }) {
         <h3>Civil and Legal Identity</h3>
         <div className="kv"><span className="k">Birth name</span><span className="v">{ch.identity?.birthName}</span></div>
         <div className="kv"><span className="k">Current legal name</span><span className="v">{ch.identity?.currentLegalName}</span></div>
-        <div className="field"><label htmlFor="legal-name">Apply for a legal name change</label><input id="legal-name" maxLength="60" value={legalName} onChange={e=>setLegalName(e.target.value)}/><button disabled={!changeProfile.available} onClick={()=>{const result=changeLegalName(state,legalName);setIdentityMessage(result.message);refresh();}}>Submit application · {money(changeProfile.cost)}</button></div>
+        <div className="field"><label htmlFor="legal-name">Apply for a legal name change</label><input id="legal-name" maxLength="60" value={legalName} onChange={e=>setLegalName(e.target.value)}/><button title={!changeProfile.available?changeProfile.note:''} disabled={!changeProfile.available} onClick={()=>{const result=actionFeedback(()=>changeLegalName(state,legalName),{success:'Legal name-change application processed.',failure:'The name-change application could not be processed.'});setIdentityMessage(result?.message||'');}}>Submit application · {money(changeProfile.cost)}</button></div>
         <div className="muted" style={{fontSize:12}}>{changeProfile.label}. {changeProfile.note}</div>
         {(ch.identity?.previousNames||[]).map((x,i)=><div className="kv" key={`${x.age}-${i}`}><span className="k">Previous name · age {x.age}</span><span className="v">{x.name} ({x.reason})</span></div>)}
         {identityMessage&&<div className="notice" role="status">{identityMessage}</div>}
@@ -74,7 +74,7 @@ export default function Law({ state, refresh }) {
         </div>
         {Object.entries(CRIMES).map(([id, crime]) => <button type="button" className="world-item crime-choice" key={id}
           disabled={unavailable}
-          onClick={() => { setPlannedCrime(state, judicial.plannedCrime === id ? null : id); refresh(); }}
+          onClick={() => actionFeedback(()=>setPlannedCrime(state, judicial.plannedCrime === id ? null : id),{success:judicial.plannedCrime===id?'Crime plan cancelled.':`${crime.label} planned for the coming year.`,failure:'Crime planning is unavailable during the current legal status.'})}
           style={{ opacity: unavailable ? 0.45 : judicial.plannedCrime === id ? 1 : 0.82 }}>
           <span className="nm">{crime.label}{judicial.plannedCrime === id ? ' ✓ planned' : ''}</span>
           <span className="rg">possible proceeds: ~{money(crime.payout * country.gdpPerCapita * 0.55)}</span>

@@ -7,6 +7,7 @@ import TabBar from './ui/TabBar.jsx';
 import SaveManager from './ui/SaveManager.jsx';
 import { slotBudget } from './engine/activities.js';
 import Credits from './ui/Credits.jsx';
+import { evaluateAction } from './ui/actionFeedback.js';
 
 const Overview = lazy(() => import('./ui/tabs/Overview.jsx'));
 const Activities = lazy(() => import('./ui/tabs/Activities.jsx'));
@@ -34,6 +35,12 @@ export default function App() {
   const warningRef = useRef(null);
 
   const refresh = useCallback(() => forceRender(), []);
+  const actionFeedback = useCallback((operation, messages = {}) => {
+    const outcome=evaluateAction(operation,messages);
+    setNotice({message:outcome.message,bad:outcome.bad});
+    forceRender();
+    return outcome.result;
+  }, []);
 
   const start = useCallback((opts) => {
     gameRef.current = newGame(opts);
@@ -90,6 +97,11 @@ export default function App() {
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
   }, [advanceWarnings]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const state = gameRef.current;
   const saveTools = <SaveManager state={state} onLoad={loadGame} onNotice={setNotice} revision={saveRevision} />;
@@ -100,7 +112,7 @@ export default function App() {
   const badges = {};
   if (nPending > 0) badges.overview = nPending;
 
-  const tabProps = { state, refresh };
+  const tabProps = { state, refresh, actionFeedback };
 
   return (
     <div className="app">

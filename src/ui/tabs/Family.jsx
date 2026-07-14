@@ -13,10 +13,9 @@ import { ensureHousing } from '../../engine/housing.js';
 import { money, titleCase } from '../format.js';
 import { displayName, marriageNameChoices } from '../../engine/names.js';
 
-const action = (fn, refresh) => () => { fn(); refresh(); };
 const TABS=[['overview','Overview'],['household','Household'],['relationships','Partner & Relationships'],['children','Children'],['extended','Extended Family'],['care','Care & Legacy']];
 
-export default function Family({ state, refresh }) {
+export default function Family({ state, refresh, actionFeedback }) {
   const ch=state.character,country=COUNTRY_BY_ID[ch.countryId],rights=genderRightsProfile(country),law=relationshipLawProfile(country);
   ch.social ||= {friendIntent:false,friends:[],datingPreference:'anyone'};
   ch.fertility ||= {contraception:'none',pregnancy:null,knownInfertility:false,treatment:null};
@@ -26,6 +25,8 @@ export default function Family({ state, refresh }) {
   const friends=(ch.social.friends||[]).filter(f=>f.alive&&!f.ended),formerFriends=(ch.social.friends||[]).filter(f=>f.ended||!f.alive),housing=ensureHousing(ch),approvalNeeded=needsHusbandWorkApproval(ch,country);
   const financePeople=[...(ch.spouse?.alive?[ch.spouse]:[]),...(ch.family||[]).filter(p=>p.alive)];
   const [section,setSection]=useState('overview');
+  const act=(fn,success='Family action recorded.')=>()=>actionFeedback?actionFeedback(fn,{success}):(fn(),refresh());
+  const action=(fn)=>act(fn,'Reconciliation attempt planned for the next year.');
 
   return <div><div className="section-tabs" role="tablist" aria-label="Family sections">{TABS.map(([id,label])=><button key={id} className={section===id?'active':''} onClick={()=>setSection(id)}>{label}</button>)}</div><div className={`grid cols-2 family-view section-${section}`}>
     <div className="panel family-overview"><h3>Family Overview</h3><div className="kv"><span>Relationship</span><span>{titleCase(ch.relationshipStatus||'single')}</span></div><div className="kv"><span>Household</span><span>{1+(ch.spouse?.alive?1:0)+children.filter(x=>x.alive&&x.atHome!==false).length} people</span></div><div className="kv"><span>Children</span><span>{children.filter(x=>x.alive).length}</span></div><div className="kv"><span>Active friendships</span><span>{friends.length}</span></div><div className="kv"><span>Relatives needing care</span><span>{relatives.filter(x=>x.alive&&x.needsCare).length}</span></div><p className="muted">Use the mini-tabs for relationships, children, household finances, extended family, caregiving, rights, and legacy.</p></div>
@@ -44,17 +45,17 @@ export default function Family({ state, refresh }) {
         <div className="kv"><span>Compatibility</span><span>{Math.round(ch.partner.compatibility??compatibilityScore(ch,ch.partner))}/100</span></div>
         <div className="kv"><span>Relationship</span><span>{Math.round(ch.partner.relationshipScore)}/100 · {ch.partner.yearsTogether} years</span></div>
         <div className="kv"><span>Personality</span><span>{(ch.partner.personality||[]).map(titleCase).join(', ')||'Unknown'}</span></div>
-        {!ch.partner.engaged&&<button disabled={ch.partner.yearsTogether<1||ch.proposalIntent} onClick={action(()=>proposeMarriage(state),refresh)}>{ch.proposalIntent?'Proposal pending':'Propose engagement'}</button>}
-        {ch.partner.engaged&&<><label className="kv"><span>Name after marriage</span><select aria-label="Name after marriage" value={ch.identity?.pendingMarriageChoice||'keep'} onChange={e=>{setMarriageNameChoice(state,e.target.value);refresh();}}>{marriageNameChoices(ch,ch.partner,country).map(x=><option key={x.id} value={x.id}>{x.label}</option>)}</select></label><button disabled={ch.marriageIntent} onClick={action(()=>planMarriage(state),refresh)}>{ch.marriageIntent?'Marriage decision pending':law.marriageAllowed||ch.partner.sex!==ch.sex?'Plan marriage':'Commit as partners'}</button></>}
-        <button className="secondary" disabled={ch.separationIntent} onClick={action(()=>endPartnership(state),refresh)}>End relationship</button>
+        {!ch.partner.engaged&&<button title={ch.partner.yearsTogether<1?'The relationship must last at least one year first.':''} disabled={ch.partner.yearsTogether<1||ch.proposalIntent} onClick={act(()=>proposeMarriage(state),'Engagement proposal planned for the next year.')}>{ch.proposalIntent?'Proposal pending':'Propose engagement'}</button>}
+        {ch.partner.engaged&&<><label className="kv"><span>Name after marriage</span><select aria-label="Name after marriage" value={ch.identity?.pendingMarriageChoice||'keep'} onChange={e=>{setMarriageNameChoice(state,e.target.value);refresh();}}>{marriageNameChoices(ch,ch.partner,country).map(x=><option key={x.id} value={x.id}>{x.label}</option>)}</select></label><button disabled={ch.marriageIntent} onClick={act(()=>planMarriage(state),'Marriage plans recorded for the next year.')}>{ch.marriageIntent?'Marriage decision pending':law.marriageAllowed||ch.partner.sex!==ch.sex?'Plan marriage':'Commit as partners'}</button></>}
+        <button className="secondary" disabled={ch.separationIntent} onClick={act(()=>endPartnership(state),'Relationship separation planned for the next year.')}>End relationship</button>
       </div>}
       {ch.spouse&&<div className="subcard">
         <div className="kv"><span>Spouse</span><span>{displayName(ch.spouse)} · {titleCase(ch.spouse.sex)} · age {personAge(ch,ch.spouse)}</span></div>
         <div className="kv"><span>Compatibility</span><span>{Math.round(ch.spouse.compatibility||50)}/100</span></div>
         <div className="kv"><span>Relationship</span><span>{Math.round(ch.spouse.relationshipScore)}/100</span></div>
         <div className="kv"><span>Employment</span><span>{ch.spouse.working?'Working':'Not employed'}</span></div>
-        <button className="secondary" disabled={ch.separationIntent} onClick={action(()=>endPartnership(state),refresh)}>Separate</button>
-        <button className="secondary" disabled={ch.divorceIntent} onClick={action(()=>requestDivorce(state),refresh)}>Request divorce</button>
+        <button className="secondary" disabled={ch.separationIntent} onClick={act(()=>endPartnership(state),'Separation planned for the next year.')}>Separate</button>
+        <button className="secondary" disabled={ch.divorceIntent} onClick={act(()=>requestDivorce(state),'Divorce request sent to the local legal process.')}>Request divorce</button>
       </div>}
       {(ch.relationshipHistory||[]).length>0&&<div className="muted" style={{marginTop:10}}>History: {ch.relationshipHistory.map(x=>`${titleCase(x.status)} at ${x.age}`).join(' · ')}</div>}
     </div>
@@ -76,8 +77,8 @@ export default function Family({ state, refresh }) {
       </>}
       {ch.age<18&&<div className="muted">Pregnancy planning and adult family-building choices become available at age 18.</div>}
       {ch.fertility.knownInfertility&&<div className="notice warn">Fertility problems have been identified.</div>}
-      {ch.age>=18&&<button disabled={ch.fertility.treatment==='active'} onClick={action(()=>requestFertilityTreatment(state),refresh)}>Seek fertility treatment</button>}
-      {ch.age>=21&&<div className="button-row"><button disabled={!!ch.familyPlans.adoption} onClick={action(()=>requestAdoption(state),refresh)}>Apply to adopt</button><button disabled={ch.familyPlans.foster} onClick={action(()=>requestFostering(state),refresh)}>Apply to foster</button></div>}
+      {ch.age>=18&&<button disabled={ch.fertility.treatment==='active'} onClick={act(()=>requestFertilityTreatment(state),'Fertility-treatment request recorded.')}>Seek fertility treatment</button>}
+      {ch.age>=21&&<div className="button-row"><button disabled={!!ch.familyPlans.adoption} onClick={act(()=>requestAdoption(state),'Adoption application submitted.')}>Apply to adopt</button><button disabled={ch.familyPlans.foster} onClick={act(()=>requestFostering(state),'Fostering application submitted.')}>Apply to foster</button></div>}
       <p className="muted" style={{fontSize:11}}>Applications, treatment access, and same-sex family rights depend on the country profile. Pregnancy can involve miscarriage and childbirth costs.</p>
     </div>
 
@@ -116,8 +117,8 @@ export default function Family({ state, refresh }) {
     <div className="panel family-care">
       <h3>Rights, Conflict & Safety</h3>
       <div className="kv"><span>Country profile</span><span>{rights.label}</span></div><p className="muted">{rights.note}</p>
-      {approvalNeeded&&<button disabled={ch.familyRights.requestWorkPermission} onClick={action(()=>requestWorkPermission(state),refresh)}>{ch.familyRights.requestWorkPermission?'Request pending':'Request permission to work'}</button>}
-      {ch.safety.concern?<div className="notice warn"><strong>Domestic-safety concern</strong><p>This models controlling, threatening, or violent non-sexual behavior. You can seek support, make a plan, or leave.</p><div className="button-row"><button disabled={ch.safety.seekHelpIntent} onClick={action(()=>seekDomesticHelp(state),refresh)}>Seek help</button><button onClick={action(()=>leaveUnsafeHome(state),refresh)}>Leave safely</button></div></div>:<div className="muted">No current domestic-safety warning.</div>}
+      {approvalNeeded&&<button disabled={ch.familyRights.requestWorkPermission} onClick={act(()=>requestWorkPermission(state),'Work-permission request recorded.')}>{ch.familyRights.requestWorkPermission?'Request pending':'Request permission to work'}</button>}
+      {ch.safety.concern?<div className="notice warn"><strong>Domestic-safety concern</strong><p>This models controlling, threatening, or violent non-sexual behavior. You can seek support, make a plan, or leave.</p><div className="button-row"><button disabled={ch.safety.seekHelpIntent} onClick={act(()=>seekDomesticHelp(state),'Support request recorded and a safety plan will be considered next year.')}>Seek help</button><button onClick={act(()=>leaveUnsafeHome(state),'You chose to leave the unsafe household.')}>Leave safely</button></div></div>:<div className="muted">No current domestic-safety warning.</div>}
       <div className="subcard"><strong>Care & legacy</strong><div className="kv"><span>Will</span><span>{ch.will?.written?'Written':'Not written'}</span></div><div className="kv"><span>Caregiving commitment</span><span>{ch.familyPlans.caregivingId?'Active':'None'}</span></div><p className="muted">Create or change a will under Law. Inheritance follows the will and the country’s succession and tax rules.</p></div>
     </div>
   </div></div>;

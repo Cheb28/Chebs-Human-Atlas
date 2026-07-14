@@ -6,12 +6,11 @@ import { money, titleCase } from '../format.js';
 import { languageProficiencyLabel, naturalizationLanguageRequirement, primaryLanguages, workLanguageMultiplier } from '../../engine/language.js';
 import { currencyCode, exchangeFeeRate, formatLocal } from '../../engine/financialSystems.js';
 
-export default function Travel({ state, refresh }) {
+export default function Travel({ state, refresh, actionFeedback }) {
   const ch = state.character;
   const im = ensureImmigration(ch);
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState(COUNTRIES.find(c => c.id !== ch.countryId)?.id || ch.countryId);
-  const [notice, setNotice] = useState('');
   const current = COUNTRY_BY_ID[ch.countryId];
   const target = COUNTRY_BY_ID[selectedId] || COUNTRIES[0];
   const routes = immigrationOptions(ch, state, target);
@@ -22,8 +21,7 @@ export default function Travel({ state, refresh }) {
   }, [query, ch.countryId]);
 
   const apply = route => {
-    const result = applyForMigration(state, target.id, route.id);
-    setNotice(result.log || result.reason || 'Application could not be submitted.');
+    const result = actionFeedback(()=>applyForMigration(state, target.id, route.id),{success:route.immediate?`Moved to ${target.name}.`:`Application submitted for ${route.label} in ${target.name}.`,failure:route.reason});
     if (result.immediate) setSelectedId(COUNTRIES.find(c => c.id !== target.id)?.id || target.id);
     refresh();
   };
@@ -34,7 +32,7 @@ export default function Travel({ state, refresh }) {
         <h3>Immigration Status</h3>
         <div className="kv"><span className="k">Current country</span><span className="v">{ch.countryName}</span></div>
         <div className="kv"><span className="k">Current currency</span><span className="v">{current.currency} · {formatLocal(current,ch,1)} per PPP dollar</span></div>
-        <div className="kv"><span className="k">Status</span><span className="v">{titleCase(im.residence.status)}</span></div>
+        <div className="kv"><span className="k">Status</span><span className={`status ${im.residence.status==='citizen'||im.residence.status==='permanent'?'status-good':im.residence.status==='irregular'?'status-bad':'status-warn'}`}>{titleCase(im.residence.status)}</span></div>
         <div className="kv"><span className="k">Citizenship(s)</span><span className="v">{im.citizenships.map(id=>COUNTRY_BY_ID[id]?.name).filter(Boolean).join(', ')}</span></div>
         {im.residence.status !== 'citizen' && <>
           <div className="kv"><span className="k">Qualifying residence</span><span className="v">{im.residence.years} year(s)</span></div>
@@ -52,14 +50,13 @@ export default function Travel({ state, refresh }) {
             <div className="kv"><span className="k">Naturalization requirement</span><span className="v">{naturalization.required} years</span></div>
             <div className="kv"><span className="k">Time remaining</span><span className="v">{naturalization.remaining} years</span></div>
             {naturalization.languageRequired>0&&<div className="kv"><span className="k">Citizenship language</span><span className="v">{naturalization.language}: {Math.round(naturalization.languageLevel)}/{naturalization.languageRequired} required</span></div>}
-            <button disabled={!naturalization.eligible} onClick={()=>{const ok=applyForCitizenship(state);setNotice(ok?`You became a citizen of ${ch.countryName}.`:'You are not eligible yet.');refresh();}}>Apply for citizenship</button>
+            <button title={!naturalization.eligible?'Residence, language, or criminal-record requirements are not yet satisfied.':''} disabled={!naturalization.eligible} onClick={()=>actionFeedback(()=>applyForCitizenship(state),{success:`You became a citizen of ${ch.countryName}.`,failure:'You are not eligible for citizenship yet.'})}>Apply for citizenship</button>
             <div className="muted" style={{fontSize:11,marginTop:5}}>{naturalization.dualAllowed?'This country permits modeled dual citizenship.':'Naturalizing here replaces prior citizenship in the model.'}</div>
           </>}
         </>}
         <div className="kv"><span className="k">Languages</span><span className="v">{Object.keys(ch.languages||{}).map(name=>`${name} — ${languageProficiencyLabel(ch,name)}`).join(', ')||'Not recorded'}</span></div>
         {ch.age>=14&&workLanguageMultiplier(ch,current)<1&&<div className="muted" style={{color:'var(--bad)',marginTop:8}}>Local-language proficiency currently reduces civilian wages by {Math.round((1-workLanguageMultiplier(ch,current))*100)}%. Use Language study in Activities.</div>}
-        {im.pending && <div style={{marginTop:12,padding:'10px',border:'1px solid var(--accent)'}}><strong>Pending:</strong> {ROUTE_LABELS[im.pending.route]} — {COUNTRY_BY_ID[im.pending.targetId]?.name}. Resolves when you age a year.</div>}
-        {notice && <div className="muted" style={{marginTop:10}}>{notice}</div>}
+        {im.pending && <div className="notice"><span className="status status-warn">Pending</span> {ROUTE_LABELS[im.pending.route]} — {COUNTRY_BY_ID[im.pending.targetId]?.name}. Resolves when you age a year.</div>}
       </div>
 
       <div className="panel" style={{marginTop:12}}>
@@ -85,8 +82,10 @@ export default function Travel({ state, refresh }) {
       <h3>Entry Routes to {target.name}</h3>
       <p className="muted" style={{fontSize:12}}>Eligibility updates with your citizenship, education, family, finances, military status, and conflict exposure. Legal applications resolve after one year unless marked immediate.</p>
       {routes.map(route=><div key={route.id} style={{padding:'11px 0',borderBottom:'1px solid var(--border)'}}>
-        <div className="kv"><span className="k"><strong>{route.label}</strong><br/><span className="muted" style={{fontSize:11}}>{route.reason}</span></span><span className="v">{route.cost>0?money(route.cost):'No fee'}{route.immediate?' · immediate':route.wait?' · 1 year':''}</span></div>
-        <button disabled={!route.eligible} onClick={()=>apply(route)}>{route.id==='irregular'?'Attempt dangerous route':route.immediate?'Move through this route':'Submit application'}</button>
+        <div className="kv"><span className="k"><strong>{route.label}</strong></span><span className={`status ${route.eligible?'status-good':'status-muted'}`}>{route.eligible?'Available':'Unavailable'}</span></div>
+        <div className="kv"><span className="k">Cost and timing</span><span className="v">{route.cost>0?money(route.cost):'No fee'}{route.immediate?' · immediate':route.wait?' · 1 year':''}</span></div>
+        <button title={!route.eligible?route.reason:''} disabled={!route.eligible} onClick={()=>apply(route)}>{route.id==='irregular'?'Attempt dangerous route':route.immediate?'Move through this route':'Submit application'}</button>
+        <details className="compact-details"><summary>{route.eligible?'Why this route is available':'Show missing requirements'}</summary><div className="muted">{route.reason}</div></details>
       </div>)}
     </div>
   </div>;

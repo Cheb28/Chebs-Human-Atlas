@@ -19,13 +19,13 @@ const TABS = [
 
 const CAREERS = ['Community religious leader', 'Clergy or worship leader', 'Religious teacher or scholar', 'Chaplain', 'Monastic vocation', 'Religious charity worker'];
 
-export default function Religion({ state, refresh }) {
+export default function Religion({ state, refresh, actionFeedback }) {
   const ch = state.character, country = COUNTRY_BY_ID[ch.countryId], religion = ensureReligionState(ch);
   const [section, setSection] = useState('overview');
   const [publicTarget, setPublicTarget] = useState(religion.publicIdentity);
   const [privateTarget, setPrivateTarget] = useState(religion.privateIdentity);
   const options = useMemo(() => [...new Set(['None', religion.publicIdentity, religion.privateIdentity, ...(country.religions || []).map(x => x.name)])].filter(Boolean), [country, religion.publicIdentity, religion.privateIdentity]);
-  const transact = fn => { const result = fn(); refresh(); return result; };
+  const transact = (fn,success=null) => success&&actionFeedback?actionFeedback(fn,{success}):((result=>{refresh();return result;})(fn()));
   const interfaith = interfaithStatus(ch), legacy = religiousLegacy(ch);
   const recent = [...religion.annualHistory].reverse().slice(0, 8);
   const autonomous = ch.age >= (religion.upbringing.autonomyAge || 16);
@@ -69,7 +69,7 @@ export default function Religion({ state, refresh }) {
       <div className="panel">
         <h3>Lifetime practices</h3>
         <div className="kv"><span className="k">Pilgrimage</span><span className="v">{religion.pilgrimage.completed ? `Completed at age ${religion.pilgrimage.completedAge}` : religion.pilgrimage.planned ? 'Planned for the next eligible year' : 'Not planned'}</span></div>
-        <button disabled={!autonomous || ch.age < 18 || religion.pilgrimage.completed || religion.pilgrimage.planned} onClick={() => transact(() => requestLifetimePilgrimage(state))}>Plan a once-in-a-lifetime pilgrimage</button>
+        <button title={!autonomous?'Independent religious choices are not available yet.':ch.age<18?'Available at age 18.':religion.pilgrimage.completed?'Already completed.':religion.pilgrimage.planned?'Already planned.':''} disabled={!autonomous || ch.age < 18 || religion.pilgrimage.completed || religion.pilgrimage.planned} onClick={() => transact(() => requestLifetimePilgrimage(state),'Lifetime pilgrimage planned for the next eligible year.')}>Plan a once-in-a-lifetime pilgrimage</button>
         <p className="muted">The game checks health, access, and affordability when the next year resolves. Tradition-specific pilgrimages, including Hajj, arrive in the appropriate expansion.</p>
         <h3 style={{ marginTop: 18 }}>Recent yearly record</h3>
         {recent.length === 0 && <div className="muted">No yearly observance has been recorded yet.</div>}
@@ -87,7 +87,7 @@ export default function Religion({ state, refresh }) {
       <div className="panel">
         <h3>Public affiliation</h3>
         <label className="field"><span>New public religion</span><select value={publicTarget} disabled={!autonomous} onChange={e => setPublicTarget(e.target.value)}>{options.map(x => <option key={x}>{x}</option>)}</select></label>
-        <button disabled={!autonomous || publicTarget === religion.publicIdentity} onClick={() => transact(() => convertOrLeaveReligion(state, publicTarget))}>{publicTarget === 'None' ? 'Publicly leave religion' : 'Make public conversion or affiliation'}</button>
+        <button disabled={!autonomous || publicTarget === religion.publicIdentity} onClick={() => transact(() => convertOrLeaveReligion(state, publicTarget),publicTarget==='None'?'Public religious affiliation removed.':`Public affiliation changed to ${publicTarget}.`)}>{publicTarget === 'None' ? 'Publicly leave religion' : 'Make public conversion or affiliation'}</button>
         <p className="muted">A public change may affect family and community relationships. Detailed country laws and tradition-specific processes are added in later religion expansions.</p>
         <h3 style={{ marginTop: 18 }}>Branch and interpretation</h3>
         <label className="field"><span>Sect, branch, or denomination</span><select value={religion.branch} onChange={e => transact(() => updateReligiousBranch(state, e.target.value, religion.fiqhSchool))}>{branchOptions(religion.tradition).map(x => <option key={x}>{x}</option>)}</select></label>
