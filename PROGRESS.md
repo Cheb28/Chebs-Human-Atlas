@@ -345,7 +345,7 @@ non-blocking `DraftBanner`. Run `node scripts/sim-test2.mjs` for the Phase 2 hea
 ### How to run
 - `npm install` (already done)
 - `npm run data` — rebuild `src/data/countries.json` from `data/factbook/` (only needed if the pipeline or source data changes)
-- `npm run dev` — start the Vite dev server (port 8040 via the repo's `.claude/launch.json`)
+- `npm run dev` — start the Vite development server
 - `node scripts/sim-test.mjs` — headless engine calibration/skew/null test (no browser needed)
 
 ### What exists

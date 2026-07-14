@@ -1,6 +1,6 @@
-# RealLives Sim — Game Design Document
+# Cheblives — Game Design Document
 
-> **You are building** a single-player, browser-based life simulator in the spirit of *Real Lives*: the player is born in any country on Earth and lives one life, year by year, shaped by that country's real economy, healthcare, education, military, legal, and immigration systems. This document is the master design spec. Country data comes from a preprocessed CIA World Factbook dataset — see `DATA_PIPELINE.md` for how raw data in `data/factbook/` becomes `src/data/countries.json`. Build order and per-phase verification live in `ROADMAP.md`. All numbers in this document are starting values, tunable during balancing.
+> **You are building** a single-player, country-driven life simulator: the player is born in any country on Earth and lives one life, year by year, shaped by that country's economy, healthcare, education, military, legal, and immigration systems. This document is the master design spec. Country data comes from a preprocessed CIA World Factbook dataset — see `DATA_PIPELINE.md` for how raw data in `data/factbook/` becomes `src/data/countries.json`. Build order and per-phase verification live in `ROADMAP.md`. All numbers in this document are starting values, tunable during balancing.
 
 **Tech stack:** React + Vite single-page app, client-only, no backend. All country data is bundled as one preprocessed JSON. State management: a single game-state object (plain reducer or Zustand — builder's choice), serializable to JSON for saves.
 

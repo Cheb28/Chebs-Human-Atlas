@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { COUNTRIES, COUNTRY_BY_ID, locationsFor } from '../engine/countries.js';
+import Credits from './Credits.jsx';
 
 export default function CharacterCreation({ onStart, saveTools }) {
   const sorted = useMemo(() => [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name)), []);
@@ -137,6 +138,7 @@ export default function CharacterCreation({ onStart, saveTools }) {
           </button>
         </div>
       </>}
+      <Credits />
     </div>
   </div>;
 }

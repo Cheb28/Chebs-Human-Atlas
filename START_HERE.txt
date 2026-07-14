@@ -1,11 +1,11 @@
-HANDOFF BRIEFING — RealLives Sim
-For the AI building this project (Claude Opus 4.8, ChatGPT 5.6, or any capable coding model)
-Written 2026-07-13 by the AI session that produced the specs, with the project owner's approval.
+HANDOFF BRIEFING — Cheblives
+Public project handoff notes.
+Created by Cheb (Discord: starmerite_1).
 
 ======================================================================
 1. WHAT THIS IS
 ======================================================================
-A single-player, browser-based life simulator in the spirit of "Real Lives":
+A single-player, country-driven browser life simulator:
 the player is born anywhere on Earth (208 playable countries) and lives one
 life, one year per turn, shaped by that country's REAL economy, healthcare,
 education, taxes, military/conscription, legal system, and immigration rules.

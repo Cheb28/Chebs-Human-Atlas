@@ -198,6 +198,8 @@ select, input {
 .toast.bad { border-color:var(--bad); }
 .toast button { padding:2px 7px; }
 .loading { padding:40px; text-align:center; color:var(--text-dim); }
+.credits { display:flex; justify-content:center; flex-wrap:wrap; gap:6px 14px; padding:18px 12px 88px; color:var(--text-dim); font-size:12px; text-align:center; }
+.card > .credits { padding:22px 4px 0; margin-top:18px; border-top:1px solid var(--border); }
 .subcard { margin-top:10px; padding:11px; border:1px solid var(--border); border-radius:9px; background:color-mix(in srgb,var(--panel) 88%,transparent); }
 .subcard + .subcard { margin-top:8px; }
 .check-row { display:flex; gap:9px; align-items:center; padding:7px 0; cursor:pointer; }

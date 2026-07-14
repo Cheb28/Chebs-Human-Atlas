@@ -6,6 +6,7 @@ import Header from './ui/Header.jsx';
 import TabBar from './ui/TabBar.jsx';
 import SaveManager from './ui/SaveManager.jsx';
 import { slotBudget } from './engine/activities.js';
+import Credits from './ui/Credits.jsx';
 
 const Overview = lazy(() => import('./ui/tabs/Overview.jsx'));
 const World = lazy(() => import('./ui/tabs/World.jsx'));
@@ -94,7 +95,7 @@ export default function App() {
   const state = gameRef.current;
   const saveTools = <SaveManager state={state} onLoad={loadGame} onNotice={setNotice} revision={saveRevision} />;
   if (!state) return <><CharacterCreation onStart={start} saveTools={saveTools} />{notice && <div className={`toast ${notice.bad?'bad':''}`} role="status">{notice.message}</div>}</>;
-  if (state.over) return <Suspense fallback={<div className="loading" role="status">Loading life summary…</div>}><LifeSummary state={state} onRestart={restart} onContinueHeir={continueHeir} /></Suspense>;
+  if (state.over) return <><Suspense fallback={<div className="loading" role="status">Loading life summary…</div>}><LifeSummary state={state} onRestart={restart} onContinueHeir={continueHeir} /></Suspense><Credits /></>;
 
   const nPending = state.character.pendingDecisions?.length || 0;
   const badges = {};
@@ -154,6 +155,7 @@ export default function App() {
         </div>
       )}
       {notice && <div className={`toast ${notice.bad?'bad':''}`} role="status"><span>{notice.message}</span><button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
+      <Credits />
     </div>
   );
 }

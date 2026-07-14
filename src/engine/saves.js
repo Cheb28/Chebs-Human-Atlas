@@ -1,7 +1,7 @@
 import { deserialize, serialize } from './game.js';
 
 export const SAVE_SCHEMA_VERSION = 1;
-const PREFIX = 'reallives.save.';
+const PREFIX = 'cheblives.save.';
 const AUTOS = 3;
 
 function storage() {
@@ -12,17 +12,17 @@ function safeName(name) {
   return String(name || 'Manual save').trim().slice(0, 40) || 'Manual save';
 }
 
-export function saveEnvelope(state, name = 'RealLives save') {
+export function saveEnvelope(state, name = 'Cheblives save') {
   return {
-    app: 'RealLives', schemaVersion: SAVE_SCHEMA_VERSION, savedAt: new Date().toISOString(),
+    app: 'Cheblives', schemaVersion: SAVE_SCHEMA_VERSION, savedAt: new Date().toISOString(),
     name: safeName(name), payload: serialize(state),
   };
 }
 
 export function validateSave(value) {
-  if (!value || typeof value !== 'object') throw new Error('The file is not a RealLives save.');
-  if (value.app !== 'RealLives' || !value.payload) throw new Error('The save header is missing or invalid.');
-  if (value.schemaVersion > SAVE_SCHEMA_VERSION) throw new Error('This save was created by a newer version of RealLives.');
+  if (!value || typeof value !== 'object') throw new Error('The file is not a Cheblives save.');
+  if (value.app !== 'Cheblives' || !value.payload) throw new Error('The save header is missing or invalid.');
+  if (value.schemaVersion > SAVE_SCHEMA_VERSION) throw new Error('This save was created by a newer version of Cheblives.');
   const p = value.payload;
   if (!Number.isFinite(p.seed) || !Number.isFinite(p.rngState) || !p.character || !Array.isArray(p.log)) {
     throw new Error('The save is incomplete or damaged.');
@@ -99,4 +99,3 @@ export function loadSave(key) {
 export function deleteSave(key) { storage()?.removeItem(PREFIX + key); }
 
 export function exportSaveText(state, name) { return JSON.stringify(saveEnvelope(state, name), null, 2); }
-
