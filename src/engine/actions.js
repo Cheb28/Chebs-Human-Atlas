@@ -37,12 +37,25 @@ export function setJobSearch(state, sectorKey) {
 }
 
 export function setDatingIntent(state, enabled) { state.character.datingIntent = enabled; }
+export function setDatingPreference(state, preference) { state.character.social.datingPreference = ['anyone','opposite','same'].includes(preference) ? preference : 'anyone'; }
+export function setFriendIntent(state, enabled) { state.character.social.friendIntent = enabled; }
 export function proposeMarriage(state) {
   const ch = state.character;
   if (ch.partner?.alive && ch.partner.yearsTogether >= 1) { ch.proposalIntent = true; return true; }
   return false;
 }
+export function planMarriage(state) { const ch=state.character;if(ch.partner?.engaged){ch.marriageIntent=true;return true;}return false; }
+export function endPartnership(state) { const ch=state.character;if(ch.partner||ch.spouse){ch.separationIntent=true;return true;}return false; }
+export function requestDivorce(state) { const ch=state.character;if(ch.spouse?.alive){ch.divorceIntent=true;return true;}return false; }
 export function setChildrenIntent(state, intent) { state.character.childrenIntent = intent; }
+export function setContraception(state, method) { state.character.fertility.contraception = ['none','barrier','reliable'].includes(method) ? method : 'none'; }
+export function requestFertilityTreatment(state) { const ch=state.character;if(ch.age>=18){ch.fertility.treatment='active';return true;}return false; }
+export function requestAdoption(state) { const ch=state.character;if(ch.age>=21){ch.familyPlans.adoption='pending';return true;}return false; }
+export function requestFostering(state) { const ch=state.character;if(ch.age>=21){ch.familyPlans.foster=true;return true;}return false; }
+export function setCaregiving(state, personId) { state.character.familyPlans.caregivingId=personId||null; }
+export function requestReconciliation(state, personId) { state.character.familyPlans.reconciliationId=personId; }
+export function seekDomesticHelp(state) { const ch=state.character;if(ch.safety?.concern){ch.safety.seekHelpIntent=true;return true;}return false; }
+export function leaveUnsafeHome(state) { const ch=state.character;if(ch.safety?.concern){ch.safety.leaveIntent=true;return true;}return false; }
 export function setHouseholdContribution(state, group, rate) { setChildContributionPolicy(state.character, group, rate); return true; }
 export function requestSocialHousing(state) { const ch=state.character; return applyForSocialHousing(ch,COUNTRY_BY_ID[ch.countryId]); }
 export function setHousingTenure(state, tenure) { const ch=state.character; return chooseHousing(ch,COUNTRY_BY_ID[ch.countryId],tenure); }

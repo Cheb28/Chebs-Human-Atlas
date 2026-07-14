@@ -2,6 +2,7 @@
 import { medianWage } from './countries.js';
 import { disabilityBurden } from './health.js';
 import { improveStudiedLanguage } from './language.js';
+import { addSkillXp } from './skills.js';
 
 // Each activity: id, label, effect(ch, ctx) applying stat/skill deltas, and an
 // available(ch, country) gate. Effects are the tunable balancing table.
@@ -57,7 +58,8 @@ export function slotBudget(ch) {
     default: slots=3;
   }
   const healthTime = disabilityBurden(ch) >= 4 || (ch.health?.frailty || 0) >= 60 ? 1 : 0;
-  return Math.max(0, slots - (ch.partTimeWork ? 1 : 0) - healthTime);
+  const caregivingTime = ch.familyPlans?.caregivingId ? 1 : 0;
+  return Math.max(0, slots - (ch.partTimeWork ? 1 : 0) - healthTime - caregivingTime);
 }
 
 export function availableActivities(ch, country) {
@@ -84,4 +86,4 @@ export function applyActivities(ch, country, rng, selectedIds) {
 // ---- helpers ----
 function clamp(v, lo = 1, hi = 100) { return Math.max(lo, Math.min(hi, v)); }
 function addStat(ch, k, d) { ch.stats[k] = clamp((ch.stats[k] || 0) + d); }
-function addSkill(ch, k, d) { ch.skills[k] = clamp((ch.skills[k] || 0) + d, 0, 100); }
+function addSkill(ch, k, d) { addSkillXp(ch, k, d); }

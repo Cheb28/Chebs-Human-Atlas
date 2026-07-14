@@ -198,6 +198,14 @@ select, input {
 .toast.bad { border-color:var(--bad); }
 .toast button { padding:2px 7px; }
 .loading { padding:40px; text-align:center; color:var(--text-dim); }
+.subcard { margin-top:10px; padding:11px; border:1px solid var(--border); border-radius:9px; background:color-mix(in srgb,var(--panel) 88%,transparent); }
+.subcard + .subcard { margin-top:8px; }
+.check-row { display:flex; gap:9px; align-items:center; padding:7px 0; cursor:pointer; }
+.choice-stack { display:grid; gap:5px; margin:10px 0; }
+.button-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:9px; }
+button.secondary { margin-left:8px; background:transparent; color:var(--text); border:1px solid var(--border); }
+.notice { margin-top:10px; padding:10px; border-radius:8px; border:1px solid var(--border); }
+.notice.warn { border-color:var(--warn); background:color-mix(in srgb,var(--warn) 10%,transparent); }
 @media (max-width:720px) { .save-create { grid-template-columns:1fr; } .save-row { align-items:flex-start; flex-direction:column; } }
 @media (max-width:560px) { .creation-mode-grid, .dual-fields { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }

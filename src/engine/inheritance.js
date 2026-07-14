@@ -51,6 +51,10 @@ export function settleEstate(ch, country) {
     const pct = equalProtected + (1 - protectedPart) * requestedPart;
     return { ...b, pct, amount: distributable * pct };
   });
-  return { gross, tax, taxRate: rules.taxRate, distributable, hasWill, rules, shares };
+  const familyById = new Map((ch.family || []).map(p => [p.id, p]));
+  const unequal = shares.length > 1 && Math.max(...shares.map(s => s.pct), 0) - Math.min(...shares.map(s => s.pct), 1) > .45;
+  const strained = shares.some(s => s.kind === 'child' && (familyById.get(s.id)?.estranged || familyById.get(s.id)?.relationshipScore < 25));
+  const disputeRisk = Math.min(.9, (hasWill ? .08 : .03) + (unequal ? .35 : 0) + (strained ? .25 : 0));
+  return { gross, tax, taxRate: rules.taxRate, distributable, hasWill, rules, shares, disputeRisk, likelyDispute: disputeRisk >= .5 };
 }
 import { investmentValue } from './investments.js';

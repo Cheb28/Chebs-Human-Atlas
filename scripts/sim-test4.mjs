@@ -14,18 +14,20 @@ console.log('=== Phase 4 family, rights, estate, and heir checks ===');
 assert.equal(genderRightsProfile(us).tier, 'equal');
 assert.equal(genderRightsProfile(afghanistan).tier, 'severe');
 
-// Dating intent creates a partner; proposal creates a spouse; trying creates a child.
+// Dating creates a partner; proposal creates an engagement; marriage and pregnancy resolve over time.
 {
   const s = newGame({ countryId: us.id, sex: 'female', seed: 901 });
   const ch = s.character;
   ch.age = 24; ch.stats.charisma = 100; ch.datingIntent = true;
   for (let i = 0; i < 30 && !ch.partner; i++) resolveFamily(ch, us, s.rng);
   assert(ch.partner, 'dating intent should eventually produce a partner');
-  ch.partner.yearsTogether = 2; ch.partner.relationshipScore = 100; ch.proposalIntent = true;
-  for (let i = 0; i < 10 && !ch.spouse; i++) { ch.proposalIntent = true; resolveFamily(ch, us, s.rng); }
+  ch.partner.yearsTogether = 2; ch.partner.relationshipScore = 100; ch.partner.compatibility = 100;
+  for (let i = 0; i < 10 && !ch.partner?.engaged; i++) { ch.proposalIntent = true; resolveFamily(ch, us, s.rng); }
+  assert(ch.partner?.engaged, 'a high-relationship proposal should eventually produce an engagement');
+  ch.marriageIntent = true; resolveFamily(ch, us, s.rng);
   assert(ch.spouse, 'a high-relationship proposal should eventually produce a spouse');
   ch.childrenIntent = 'try';
-  for (let i = 0; i < 40 && !ch.family.some(p => p.relation === 'Child'); i++) resolveFamily(ch, us, s.rng);
+  for (let i = 0; i < 40 && !ch.family.some(p => p.relation === 'Child'); i++) { resolveFamily(ch, us, s.rng); ch.age += 1; }
   assert(ch.family.some(p => p.relation === 'Child'), 'trying for children should eventually create a child');
 }
 

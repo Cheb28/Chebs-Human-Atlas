@@ -1,96 +1,98 @@
 import { COUNTRY_BY_ID } from '../../engine/countries.js';
-import { personAge } from '../../engine/family.js';
+import { compatibilityScore, personAge } from '../../engine/family.js';
 import { genderRightsProfile, needsHusbandWorkApproval } from '../../engine/genderRights.js';
-import { setDatingIntent, proposeMarriage, setChildrenIntent, requestWorkPermission, setHouseholdContribution } from '../../engine/actions.js';
+import { relationshipLawProfile } from '../../engine/relationshipLaws.js';
+import {
+  setDatingIntent,setDatingPreference,setFriendIntent,proposeMarriage,planMarriage,endPartnership,requestDivorce,
+  setChildrenIntent,setContraception,requestFertilityTreatment,requestAdoption,requestFostering,
+  setCaregiving,requestReconciliation,seekDomesticHelp,leaveUnsafeHome,requestWorkPermission,setHouseholdContribution,
+} from '../../engine/actions.js';
 import { ensureHousing } from '../../engine/housing.js';
-import { money } from '../format.js';
+import { skillLabel } from '../../engine/skills.js';
+import { money, titleCase } from '../format.js';
+
+const action = (fn, refresh) => () => { fn(); refresh(); };
 
 export default function Family({ state, refresh }) {
-  const ch = state.character;
-  const country = COUNTRY_BY_ID[ch.countryId];
-  const rights = genderRightsProfile(country);
-  const relatives = (ch.family || []).filter(p => p.relation !== 'Child');
-  const children = (ch.family || []).filter(p => p.relation === 'Child');
-  const approvalNeeded = needsHusbandWorkApproval(ch, country);
-  const housing = ensureHousing(ch);
+  const ch=state.character,country=COUNTRY_BY_ID[ch.countryId],rights=genderRightsProfile(country),law=relationshipLawProfile(country);
+  ch.social ||= {friendIntent:false,friends:[],datingPreference:'anyone'};
+  ch.fertility ||= {contraception:'none',pregnancy:null,knownInfertility:false,treatment:null};
+  ch.familyPlans ||= {adoption:null,foster:false,caregivingId:null,reconciliationId:null};
+  ch.safety ||= {concern:false};
+  const relatives=(ch.family||[]).filter(p=>p.relation!=='Child'),children=(ch.family||[]).filter(p=>p.relation==='Child');
+  const friends=(ch.social.friends||[]).filter(f=>f.alive),housing=ensureHousing(ch),approvalNeeded=needsHusbandWorkApproval(ch,country);
 
-  return (
-    <div className="grid cols-2">
-      <div className="panel">
-        <h3>Relationships</h3>
-        {!ch.spouse && !ch.partner && ch.age >= 16 && (
-          <label style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', marginBottom: 12 }}>
-            <input type="checkbox" checked={ch.datingIntent} onChange={e => { setDatingIntent(state, e.target.checked); refresh(); }} />
-            <span>Look for a partner this year</span>
-          </label>
-        )}
-        {ch.age < 16 && <div className="muted">Dating choices become available at age 16.</div>}
-        {ch.partner && <div className="panel" style={{ padding: 12, marginBottom: 12 }}>
-          <div className="kv"><span className="k">Partner</span><span className="v">{ch.partner.sex}</span></div>
-          <div className="kv"><span className="k">Relationship</span><span className="v">{Math.round(ch.partner.relationshipScore)} / 100</span></div>
-          <div className="kv"><span className="k">Years together</span><span className="v">{ch.partner.yearsTogether}</span></div>
-          <button disabled={ch.partner.yearsTogether < 1 || ch.proposalIntent} style={{ marginTop: 10 }}
-            onClick={() => { proposeMarriage(state); refresh(); }}>
-            {ch.proposalIntent ? 'Proposal pending' : 'Propose marriage'}
-          </button>
-        </div>}
-        {ch.spouse && <>
-          <div className="kv"><span className="k">Spouse</span><span className="v">{ch.spouse.alive ? `${ch.spouse.sex}, age ${personAge(ch, ch.spouse)}` : 'Deceased'}</span></div>
-          <div className="kv"><span className="k">Relationship</span><span className="v">{Math.round(ch.spouse.relationshipScore)} / 100</span></div>
-          <div className="kv"><span className="k">Employment</span><span className="v">{ch.spouse.working ? 'Working' : 'Not employed'}</span></div>
-          <div style={{ marginTop: 14 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>CHILDREN</div>
-            {['try', 'neutral', 'avoid'].map(id => (
-              <label key={id} style={{ display: 'flex', gap: 8, padding: '4px 0', cursor: 'pointer' }}>
-                <input type="radio" name="children-intent" checked={ch.childrenIntent === id}
-                  onChange={() => { setChildrenIntent(state, id); refresh(); }} />
-                <span>{id === 'try' ? 'Try for a child' : id === 'avoid' ? 'Avoid pregnancy' : 'Leave it to chance'}</span>
-              </label>
-            ))}
-          </div>
-        </>}
-      </div>
-
-      <div className="panel">
-        <h3>Rights & Household Rules</h3>
-        <div className="kv"><span className="k">Country profile</span><span className="v">{rights.label}</span></div>
-        <div className="muted" style={{ fontSize: 12, lineHeight: 1.5, marginTop: 8 }}>{rights.note}</div>
-        {ch.sex === 'female' && rights.femaleHireMult < 1 && (
-          <div className="tag" style={{ marginTop: 12, color: 'var(--warn)' }}>
-            Employment opportunity ×{rights.femaleHireMult.toFixed(2)}
-          </div>
-        )}
-        {approvalNeeded && <div style={{ marginTop: 14 }}>
-          <div className="muted" style={{ marginBottom: 8 }}>Paid work currently requires household approval under this country profile.</div>
-          <button disabled={ch.familyRights.requestWorkPermission} onClick={() => { requestWorkPermission(state); refresh(); }}>
-            {ch.familyRights.requestWorkPermission ? 'Request pending' : 'Request permission to work'}
-          </button>
-        </div>}
-      </div>
-
-      <div className="panel">
-        <h3>Children</h3>
-        {children.length === 0 && <div className="muted">No children.</div>}
-        {children.map(p => <div className="kv" key={p.id}>
-          <span className="k">{p.name || `Child ${p.childNumber}`} ({p.sex})</span>
-          <span className="v">{p.alive ? `Age ${personAge(ch, p)} · relationship ${Math.round(p.relationshipScore)}` : 'Deceased'}</span>
-          {p.alive && <span className="muted" style={{fontSize:11}}>{p.atHome===false?'Moved out':'At home'}{p.working?' · working':''} · {money(p.personalSavings||0)} saved</span>}
-        </div>)}
-        {children.length > 0 && <div style={{marginTop:14,borderTop:'1px solid var(--border)',paddingTop:10}}>
-          <div className="muted" style={{fontSize:12,marginBottom:7}}>WORKING CHILD CONTRIBUTIONS</div>
-          <label className="kv"><span>Under 18</span><select value={housing.teenContributionRate} onChange={e=>{setHouseholdContribution(state,'teen',e.target.value);refresh();}}>{[0,.1,.25,.5].map(v=><option key={v} value={v}>{v*100}% to household</option>)}</select></label>
-          <label className="kv"><span>Adult child at home</span><select value={housing.adultChildContributionRate} onChange={e=>{setHouseholdContribution(state,'adult',e.target.value);refresh();}}>{[0,.1,.25,.5].map(v=><option key={v} value={v}>{v*100}% board</option>)}</select></label>
-          <div className="muted" style={{fontSize:11,marginTop:7}}>The remainder stays in the child's savings. Higher board increases the chance an adult child moves out.</div>
-        </div>}
-      </div>
-
-      <div className="panel">
-        <h3>Parents & Siblings</h3>
-        {relatives.map(p => <div className="kv" key={p.id}>
-          <span className="k">{p.relation}</span>
-          <span className="v">{p.alive ? `Age ${personAge(ch, p)} · ${COUNTRY_BY_ID[p.countryId]?.name || ch.countryName} national · relationship ${Math.round(p.relationshipScore)}` : 'Deceased'}</span>
-        </div>)}
-      </div>
+  return <div className="grid cols-2">
+    <div className="panel">
+      <h3>Dating & Partnership</h3>
+      <div className="kv"><span className="k">Relationship status</span><span className="v">{titleCase(ch.relationshipStatus||'single')}</span></div>
+      <div className="kv"><span className="k">Local law</span><span className="v">{law.label}</span></div>
+      <p className="muted" style={{fontSize:12,lineHeight:1.5}}>{law.note}</p>
+      {!ch.spouse&&!ch.partner&&ch.age>=16&&<>
+        <label className="kv"><span>People you want to meet</span><select aria-label="Dating preference" value={ch.social.datingPreference} onChange={e=>{setDatingPreference(state,e.target.value);refresh();}}><option value="anyone">Any gender</option><option value="opposite">Another gender</option><option value="same">Same gender</option></select></label>
+        <label className="check-row"><input type="checkbox" checked={ch.datingIntent} onChange={e=>{setDatingIntent(state,e.target.checked);refresh();}}/><span>Look for a partner this year</span></label>
+      </>}
+      {ch.age<16&&<div className="muted">Dating choices become available at age 16.</div>}
+      {ch.partner&&<div className="subcard">
+        <div className="kv"><span>Partner</span><span>{titleCase(ch.partner.sex)} · age {personAge(ch,ch.partner)}</span></div>
+        <div className="kv"><span>Compatibility</span><span>{Math.round(ch.partner.compatibility??compatibilityScore(ch,ch.partner))}/100</span></div>
+        <div className="kv"><span>Relationship</span><span>{Math.round(ch.partner.relationshipScore)}/100 · {ch.partner.yearsTogether} years</span></div>
+        <div className="kv"><span>Personality</span><span>{(ch.partner.personality||[]).map(titleCase).join(', ')||'Unknown'}</span></div>
+        {!ch.partner.engaged&&<button disabled={ch.partner.yearsTogether<1||ch.proposalIntent} onClick={action(()=>proposeMarriage(state),refresh)}>{ch.proposalIntent?'Proposal pending':'Propose engagement'}</button>}
+        {ch.partner.engaged&&<button disabled={ch.marriageIntent} onClick={action(()=>planMarriage(state),refresh)}>{ch.marriageIntent?'Marriage decision pending':law.marriageAllowed||ch.partner.sex!==ch.sex?'Plan marriage':'Commit as partners'}</button>}
+        <button className="secondary" disabled={ch.separationIntent} onClick={action(()=>endPartnership(state),refresh)}>End relationship</button>
+      </div>}
+      {ch.spouse&&<div className="subcard">
+        <div className="kv"><span>Spouse</span><span>{titleCase(ch.spouse.sex)} · age {personAge(ch,ch.spouse)}</span></div>
+        <div className="kv"><span>Compatibility</span><span>{Math.round(ch.spouse.compatibility||50)}/100</span></div>
+        <div className="kv"><span>Relationship</span><span>{Math.round(ch.spouse.relationshipScore)}/100</span></div>
+        <div className="kv"><span>Employment</span><span>{ch.spouse.working?'Working':'Not employed'}</span></div>
+        <button className="secondary" disabled={ch.separationIntent} onClick={action(()=>endPartnership(state),refresh)}>Separate</button>
+        <button className="secondary" disabled={ch.divorceIntent} onClick={action(()=>requestDivorce(state),refresh)}>Request divorce</button>
+      </div>}
+      {(ch.relationshipHistory||[]).length>0&&<div className="muted" style={{marginTop:10}}>History: {ch.relationshipHistory.map(x=>`${titleCase(x.status)} at ${x.age}`).join(' · ')}</div>}
     </div>
-  );
+
+    <div className="panel">
+      <h3>Friendships</h3>
+      {ch.age>=6&&<label className="check-row"><input type="checkbox" checked={ch.social.friendIntent} onChange={e=>{setFriendIntent(state,e.target.checked);refresh();}}/><span>Make time to meet a new friend this year</span></label>}
+      {friends.length===0&&<div className="muted">No active close friendships.</div>}
+      {friends.map(f=><div className="kv" key={f.id}><span>Friend · {f.yearsKnown||0} years</span><span>{Math.round(f.relationshipScore)}/100 · {(f.personality||[]).map(titleCase).join(', ')}</span></div>)}
+    </div>
+
+    <div className="panel">
+      <h3>Pregnancy & Family Building</h3>
+      <div className="kv"><span>Pregnancy</span><span>{ch.fertility.pregnancy?(ch.fertility.pregnancy.planned?'Planned pregnancy':'Surprise pregnancy'):'None'}</span></div>
+      {(ch.spouse||ch.partner)&&<>
+        <div className="choice-stack">{[['try','Plan a pregnancy'],['neutral','Open to pregnancy'],['avoid','Avoid pregnancy']].map(([id,label])=><label key={id}><input type="radio" name="children-intent" checked={ch.childrenIntent===id} onChange={()=>{setChildrenIntent(state,id);refresh();}}/> {label}</label>)}</div>
+        <label className="kv"><span>Contraception</span><select aria-label="Contraception" value={ch.fertility.contraception} onChange={e=>{setContraception(state,e.target.value);refresh();}}><option value="none">None</option><option value="barrier">Barrier method</option><option value="reliable">Reliable method</option></select></label>
+      </>}
+      {ch.fertility.knownInfertility&&<div className="notice warn">Fertility problems have been identified.</div>}
+      {ch.age>=18&&<button disabled={ch.fertility.treatment==='active'} onClick={action(()=>requestFertilityTreatment(state),refresh)}>Seek fertility treatment</button>}
+      {ch.age>=21&&<div className="button-row"><button disabled={!!ch.familyPlans.adoption} onClick={action(()=>requestAdoption(state),refresh)}>Apply to adopt</button><button disabled={ch.familyPlans.foster} onClick={action(()=>requestFostering(state),refresh)}>Apply to foster</button></div>}
+      <p className="muted" style={{fontSize:11}}>Applications, treatment access, and same-sex family rights depend on the country profile. Pregnancy can involve miscarriage and childbirth costs.</p>
+    </div>
+
+    <div className="panel">
+      <h3>Children</h3>
+      {children.length===0&&<div className="muted">No children.</div>}
+      {children.map(p=><div className="subcard" key={p.id}>
+        <div className="kv"><strong>{p.name||`Child ${p.childNumber}`} · {titleCase(p.sex)}</strong><span>{p.alive?`Age ${personAge(ch,p)} · relationship ${Math.round(p.relationshipScore)}`:'Deceased'}</span></div>
+        {p.alive&&<><div className="muted">{titleCase(p.origin||'birth')} · {(p.personality||[]).map(titleCase).join(', ')||'personality developing'} · {p.educationOutcome||'not school age'}</div><div className="muted">Academic {skillLabel(p.skills?.academic)} · {p.career||'no career yet'} · {p.partnerStatus||'single'} · {p.ownChildren||0} children</div><div className="muted">{p.atHome===false?'Moved out':'At home'}{p.working?' · working':''} · {money(p.personalSavings||0)} saved{p.favoritism&&p.favoritism!=='neutral'?` · ${p.favoritism}`:''}{p.estranged?' · estranged':''}</div>{p.estranged&&<button disabled={ch.familyPlans.reconciliationId===p.id} onClick={action(()=>requestReconciliation(state,p.id),refresh)}>Attempt reconciliation</button>}</>}
+      </div>)}
+      {children.length>0&&<div className="subcard"><strong>Working-child contributions</strong><label className="kv"><span>Under 18</span><select value={housing.teenContributionRate} onChange={e=>{setHouseholdContribution(state,'teen',e.target.value);refresh();}}>{[0,.1,.25,.5].map(v=><option key={v} value={v}>{v*100}%</option>)}</select></label><label className="kv"><span>Adult child at home</span><select value={housing.adultChildContributionRate} onChange={e=>{setHouseholdContribution(state,'adult',e.target.value);refresh();}}>{[0,.1,.25,.5].map(v=><option key={v} value={v}>{v*100}% board</option>)}</select></label></div>}
+    </div>
+
+    <div className="panel">
+      <h3>Parents, Care & Reconciliation</h3>
+      {relatives.map(p=><div className="subcard" key={p.id}><div className="kv"><span>{p.relation}</span><span>{p.alive?`Age ${personAge(ch,p)} · ${COUNTRY_BY_ID[p.countryId]?.name||ch.countryName} national · ${Math.round(p.relationshipScore)}/100`:'Deceased'}</span></div>{p.needsCare&&<label className="check-row"><input type="checkbox" checked={ch.familyPlans.caregivingId===p.id} onChange={e=>{setCaregiving(state,e.target.checked?p.id:null);refresh();}}/><span>Provide regular care</span></label>}{p.estranged&&<button disabled={ch.familyPlans.reconciliationId===p.id} onClick={action(()=>requestReconciliation(state,p.id),refresh)}>Attempt reconciliation</button>}</div>)}
+    </div>
+
+    <div className="panel">
+      <h3>Rights, Conflict & Safety</h3>
+      <div className="kv"><span>Country profile</span><span>{rights.label}</span></div><p className="muted">{rights.note}</p>
+      {approvalNeeded&&<button disabled={ch.familyRights.requestWorkPermission} onClick={action(()=>requestWorkPermission(state),refresh)}>{ch.familyRights.requestWorkPermission?'Request pending':'Request permission to work'}</button>}
+      {ch.safety.concern?<div className="notice warn"><strong>Domestic-safety concern</strong><p>This models controlling, threatening, or violent non-sexual behavior. You can seek support, make a plan, or leave.</p><div className="button-row"><button disabled={ch.safety.seekHelpIntent} onClick={action(()=>seekDomesticHelp(state),refresh)}>Seek help</button><button onClick={action(()=>leaveUnsafeHome(state),refresh)}>Leave safely</button></div></div>:<div className="muted">No current domestic-safety warning.</div>}
+    </div>
+  </div>;
 }

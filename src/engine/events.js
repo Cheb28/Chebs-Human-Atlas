@@ -6,6 +6,7 @@ import { medianWage } from './countries.js';
 import { wageFor, SECTORS } from './jobs.js';
 import { resolveVisaExpiry, resolveNationalityChoice } from './immigration.js';
 import { resolveAppeal, resolveCivilDecision, resolveLegalDecision } from './judicial.js';
+import { addSkillXp } from './skills.js';
 
 // ---- Decision resolver (by type, keeps decisions serializable) ----------
 export function resolveDecision(ch, country, state, rng, decision, log) {
@@ -28,8 +29,8 @@ export function resolveDecision(ch, country, state, rng, decision, log) {
     }
     case 'mentor': {
       if (choice === 'accept') {
-        ch.skills[decision.skill] = Math.min(100, ch.skills[decision.skill] + 8);
-        log.push(`Took up a mentor's guidance (+${decision.skill}).`);
+        addSkillXp(ch, decision.skill, 8);
+        log.push(`Took up a mentor's guidance (+8 ${decision.skill} XP).`);
       }
       break;
     }

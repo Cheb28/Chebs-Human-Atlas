@@ -1,5 +1,5 @@
 import { COUNTRY_BY_ID } from '../../engine/countries.js';
-import { eligibleBeneficiaries, inheritanceRules } from '../../engine/inheritance.js';
+import { eligibleBeneficiaries, inheritanceRules, settleEstate } from '../../engine/inheritance.js';
 import { CRIMES, ensureJudicial, lawProfile } from '../../engine/judicial.js';
 import { clearWill, setPlannedCrime, setWillShare } from '../../engine/actions.js';
 import { money, titleCase } from '../format.js';
@@ -8,6 +8,7 @@ export default function Law({ state, refresh }) {
   const ch = state.character;
   const country = COUNTRY_BY_ID[ch.countryId];
   const rules = inheritanceRules(country);
+  const estatePreview = settleEstate(ch, country);
   const profile = lawProfile(country);
   const judicial = ensureJudicial(ch);
   const beneficiaries = eligibleBeneficiaries(ch);
@@ -79,6 +80,8 @@ export default function Law({ state, refresh }) {
               onChange={e => { setWillShare(state, b.id, e.target.value); refresh(); }} style={{ width: 80 }} /> %</span>
           </label>)}
           <div className="kv" style={{ marginTop: 8 }}><span className="k">Entered total</span><span className="v">{total}%</span></div>
+          <div className="kv"><span className="k">Family-dispute risk</span><span className="v">{Math.round(estatePreview.disputeRisk*100)}%{estatePreview.likelyDispute?' · high':''}</span></div>
+          <div className="muted" style={{fontSize:11}}>Unequal shares, estrangement, and poor family relationships increase the likelihood of a challenge.</div>
           <button onClick={() => { clearWill(state); refresh(); }} style={{ marginTop: 12 }}>Use default equal split</button>
         </>}
       </div>

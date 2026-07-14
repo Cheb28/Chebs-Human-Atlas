@@ -2,7 +2,26 @@
 
 Handoff notes for whoever continues this build (see `START_HERE.txt` first, then `docs/`).
 
-## Current status: Phase 9 COMPLETE — roadmap implementation complete
+## Current status: Phase 10 COMPLETE — Family and Social Life expansion
+
+### Phase 10 — Family and Social Life
+
+- Added dating preferences, partner personality, compatibility, engagement, marriage, committed
+  partnership, separation, divorce, remarriage eligibility, widowhood, and relationship history.
+- Added country-specific same-sex marriage, civil-recognition, unrecognized, and criminalization
+  profiles, including adoption/fostering eligibility and safety risk.
+- Added persistent friendships, loneliness effects, pregnancy planning, contraception, accidental
+  pregnancy, miscarriage, childbirth costs, infertility discovery/treatment, adoption, and fostering.
+- Children now develop personalities, schooling outcomes, chronic conditions, careers, partners,
+  independent households, savings, and children of their own.
+- Added family caregiving, estrangement, reconciliation, favoritism, domestic conflict and non-sexual
+  abuse warnings, help/safety planning, and leaving options.
+- Unequal wills, estrangement, and poor family relationships now produce a visible inheritance-dispute
+  risk. Added Phase 10 regression coverage for all major systems.
+- Replaced capped 0–100 skills with uncapped XP and practical levels. Education now records formal
+  credentials such as a bachelor's degree or vocational certificate.
+
+## Previous status: Phase 9 COMPLETE — roadmap implementation complete
 
 ### Phase 9 — Final polishing
 

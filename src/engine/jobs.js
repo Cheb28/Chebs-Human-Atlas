@@ -5,6 +5,7 @@ import { healthWorkCapacity } from './health.js';
 import { isIrregular } from './immigration.js';
 import { workLanguageMultiplier } from './language.js';
 import { recordPenalty } from './judicial.js';
+import { hasSkillLevel, skillLevel } from './skills.js';
 
 // Sector ladders: each rung has title, wage multiplier vs median wage, and a
 // gate(ch) predicate for reaching that rung.
@@ -13,33 +14,33 @@ export const SECTORS = {
     label: 'Informal / Agricultural',
     rungs: [
       { title: 'Laborer', mult: 0.4, gate: () => true },
-      { title: 'Farmhand / Hawker', mult: 0.6, gate: (ch) => ch.skills.vocational >= 20 },
-      { title: 'Foreman', mult: 0.9, gate: (ch) => ch.skills.vocational >= 45 },
+      { title: 'Farmhand / Hawker', mult: 0.6, gate: (ch) => hasSkillLevel(ch,'vocational',2) },
+      { title: 'Foreman', mult: 0.9, gate: (ch) => hasSkillLevel(ch,'vocational',4) },
     ],
   },
   service: {
     label: 'Service',
     rungs: [
       { title: 'Shop clerk', mult: 0.7, gate: (ch) => hasSecondary(ch) },
-      { title: 'Office worker', mult: 1.0, gate: (ch) => hasSecondary(ch) && ch.skills.academic >= 40 },
-      { title: 'Manager', mult: 1.8, gate: (ch) => ch.skills.academic >= 55 && ch.stats.charisma >= 50 },
-      { title: 'Executive', mult: 3.5, gate: (ch) => ch.skills.academic >= 65 && ch.stats.charisma >= 65 },
+      { title: 'Office worker', mult: 1.0, gate: (ch) => hasSecondary(ch) && hasSkillLevel(ch,'academic',4) },
+      { title: 'Manager', mult: 1.8, gate: (ch) => hasSkillLevel(ch,'academic',5) && ch.stats.charisma >= 50 },
+      { title: 'Executive', mult: 3.5, gate: (ch) => hasSkillLevel(ch,'academic',6) && ch.stats.charisma >= 65 },
     ],
   },
   industrial: {
     label: 'Industrial / Trades',
     rungs: [
       { title: 'Apprentice', mult: 0.6, gate: () => true },
-      { title: 'Tradesman', mult: 1.1, gate: (ch) => ch.skills.vocational >= 40 },
-      { title: 'Master / Site boss', mult: 2.0, gate: (ch) => ch.skills.vocational >= 65 },
+      { title: 'Tradesman', mult: 1.1, gate: (ch) => hasSkillLevel(ch,'vocational',4) },
+      { title: 'Master / Site boss', mult: 2.0, gate: (ch) => hasSkillLevel(ch,'vocational',6) },
     ],
   },
   professional: {
     label: 'Professional',
     rungs: [
-      { title: 'Junior', mult: 1.5, gate: (ch) => ch.education.degree && ch.skills.academic >= 60 },
-      { title: 'Senior', mult: 2.5, gate: (ch) => ch.education.degree && ch.skills.academic >= 70 },
-      { title: 'Partner / Chief', mult: 5.0, gate: (ch) => ch.education.degree && ch.skills.academic >= 80 && ch.stats.charisma >= 60 },
+      { title: 'Junior', mult: 1.5, gate: (ch) => ch.education.degree && hasSkillLevel(ch,'academic',6) },
+      { title: 'Senior', mult: 2.5, gate: (ch) => ch.education.degree && hasSkillLevel(ch,'academic',7) },
+      { title: 'Partner / Chief', mult: 5.0, gate: (ch) => ch.education.degree && hasSkillLevel(ch,'academic',8) && ch.stats.charisma >= 60 },
     ],
   },
 };
@@ -85,7 +86,7 @@ export function attemptHire(ch, country, sectorKey, rng, { firstJob = false } = 
   if (!sec || !sec.rungs[0].gate(ch)) return { hired: false, log: `Not qualified for ${sec ? sec.label : 'that sector'} yet.` };
   if (needsHusbandWorkApproval(ch, country)) return { hired: false, log: 'Your household’s legal restrictions prevented you from taking paid work.' };
   const unemp = (firstJob ? (country.youthUnemployment ?? country.unemployment * 2) : country.unemployment) / 100;
-  const skillMargin = (ch.skills.academic + ch.skills.vocational) / 400; // up to +0.5
+  const skillMargin = Math.min(.5, (skillLevel(ch.skills.academic) + skillLevel(ch.skills.vocational)) / 20);
   const veteranBonus = ch.veteran ? 0.05 : 0;
   const demographicPenalty = demographicHiringPenalty(ch, country);
   const rightsMult = ch.sex === 'female' ? genderRightsProfile(country).femaleHireMult : 1;

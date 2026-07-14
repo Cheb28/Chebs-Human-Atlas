@@ -2,6 +2,7 @@ import { COUNTRY_BY_ID } from '../../engine/countries.js';
 import { canEnrollUniversity, canEnrollVocational, universityTuition, isEnrolledHigher } from '../../engine/education.js';
 import { enrollUniversity, enrollVocational, setPrivateSchool, setResistDropout } from '../../engine/actions.js';
 import { money } from '../format.js';
+import { skillLabel, skillLevel } from '../../engine/skills.js';
 
 const STAGE_LABELS = {
   preschool: 'Not yet in school', primary: 'Primary school', secondary: 'Secondary school',
@@ -22,9 +23,8 @@ export default function Education({ state, refresh }) {
       <div className="panel">
         <h3>Schooling</h3>
         <div className="kv"><span className="k">Stage</span><span className="v">{STAGE_LABELS[ed.stage] || ed.stage}</span></div>
-        <div className="kv"><span className="k">Academic skill</span><span className="v">{Math.round(ch.skills.academic)}</span></div>
-        <div className="kv"><span className="k">Degree</span><span className="v">{ed.degree ? 'Yes' : 'No'}</span></div>
-        <div className="kv"><span className="k">Vocational cert.</span><span className="v">{ed.vocational ? 'Yes' : 'No'}</span></div>
+        <div className="kv"><span className="k">Academic experience</span><span className="v">{skillLabel(ch.skills.academic)}</span></div>
+        <div className="kv"><span className="k">Credentials</span><span className="v">{ed.credentials?.join(', ') || 'None'}</span></div>
         {isEnrolledHigher(ch) && <div className="kv"><span className="k">Years completed</span><span className="v">{ed.yearsInHigher}</span></div>}
         <div className="kv"><span className="k">Country education tier</span><span className="v">{country.educationTier} / 4</span></div>
         {ch.age >= 6 && ch.age < 18 && !ed.droppedOut && <>
@@ -54,7 +54,7 @@ export default function Education({ state, refresh }) {
 
         {!isEnrolledHigher(ch) && ch.age >= 16 && <>
           <div className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
-            University needs Academic ≥ 50; vocational needs ≥ 30. A degree unlocks professional careers.
+            University needs Academic level 5; vocational training needs level 3. Formal credentials unlock careers.
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -72,7 +72,7 @@ export default function Education({ state, refresh }) {
               )}
             </div>
             {!uniOk && ch.age >= 18 && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-              {ch.skills.academic < 50 ? 'Academic skill too low.' : 'Not eligible right now.'}
+              {skillLevel(ch.skills.academic) < 5 ? 'Academic level too low.' : 'Not eligible right now.'}
             </div>}
           </div>
 

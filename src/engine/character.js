@@ -9,6 +9,7 @@ import { canonicalLanguage, primaryLanguages } from './language.js';
 import { initialHousing } from './housing.js';
 
 export const WEALTH_CLASSES = ['Destitute', 'Poor', 'Middle', 'Affluent', 'Rich'];
+const PERSONALITY_TRAITS = ['ambitious','caring','independent','social','cautious','creative','resilient','curious'];
 
 // Roll a wealth class from Gini + income tier. Higher Gini widens toward extremes;
 // higher income tier shifts the center up.
@@ -94,6 +95,7 @@ export function createCharacter(rng, options = {}) {
     sex,
     ethnicity,
     religion,
+    personality: [...new Set([rng.pick(PERSONALITY_TRAITS), rng.pick(PERSONALITY_TRAITS)])],
     nativeLanguages: country.languages.slice(0, 2),
     languages: Object.fromEntries(primaryLanguages(country).map(lang=>[canonicalLanguage(lang),100])),
     languageStudyTarget: null,
@@ -131,9 +133,18 @@ export function createCharacter(rng, options = {}) {
     veteran: false,
     spouse: null,
     partner: null,
+    relationshipStatus: 'single',
+    relationshipHistory: [],
     datingIntent: false,
     proposalIntent: false,
+    marriageIntent: false,
+    separationIntent: false,
+    divorceIntent: false,
     childrenIntent: 'neutral',
+    social: { friendIntent: false, friends: [], datingPreference: 'anyone' },
+    fertility: { contraception: 'none', pregnancy: null, knownInfertility: false, treatment: null },
+    familyPlans: { adoption: null, foster: false, caregivingId: null, reconciliationId: null },
+    safety: { concern: false, seekHelpIntent: false, safetyPlan: false, leaveIntent: false },
     familyRights: { workPermission: false, requestWorkPermission: false },
     will: { written: false, shares: {} },
     ownsHome: false,

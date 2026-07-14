@@ -37,6 +37,16 @@ Ideas intentionally held outside the active phase. Items may be promoted during 
 - Medical-history timeline, healthy years, lifetime healthcare spending, and years with disability.
 - Strong/medium/weak bankruptcy and debt-discharge behavior through the judicial system.
 
+## Completed during Phase 10
+
+- Dating compatibility, relationship stages, friendship, country same-sex relationship laws, and
+  carefully modeled non-sexual domestic conflict and safety choices.
+- Pregnancy planning, contraception, miscarriage, childbirth, infertility treatment, adoption,
+  fostering, and single-parent pathways.
+- Child personality, education, health, career, relationship, and grandchild development.
+- Caregiving, estrangement, reconciliation, favoritism, and inheritance-dispute risk.
+- Uncapped skill XP/levels and formal education credentials.
+
 ## Later-depth ideas
 
 - Genetics and family medical history.

@@ -2,6 +2,7 @@ import { COUNTRY_BY_ID } from '../../engine/countries.js';
 import { netWorth } from '../../engine/advance.js';
 import { jobTitle } from '../../engine/jobs.js';
 import { STAT_COLORS, titleCase, money } from '../format.js';
+import { skillLabel } from '../../engine/skills.js';
 
 function StatBar({ label, value, color }) {
   return (
@@ -44,11 +45,9 @@ export default function Overview({ state, saveTools }) {
       </div>
 
       <div className="panel">
-        <h3>Skills</h3>
-        <StatBar label="Academic" value={ch.skills.academic} color="var(--intelligence)" />
-        <StatBar label="Vocational" value={ch.skills.vocational} color="var(--fitness)" />
-        <StatBar label="Business" value={ch.skills.business} color="var(--happiness)" />
-        <StatBar label="Political" value={ch.skills.political} color="var(--charisma)" />
+        <h3>Skills & Experience</h3>
+        {Object.entries(ch.skills).map(([key,value])=><div className="kv" key={key}><span className="k">{titleCase(key)}</span><span className="v">{skillLabel(value)}</span></div>)}
+        <div className="kv"><span className="k">Credentials</span><span className="v">{ch.education.credentials?.join(', ')||'None'}</span></div>
       </div>
 
       <div className="panel">
