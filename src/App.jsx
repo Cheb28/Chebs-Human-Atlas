@@ -22,6 +22,7 @@ const Family = lazy(() => import('./ui/tabs/Family.jsx'));
 const Law = lazy(() => import('./ui/tabs/Law.jsx'));
 const Business = lazy(() => import('./ui/tabs/Business.jsx'));
 const Travel = lazy(() => import('./ui/tabs/Travel.jsx'));
+const Religion = lazy(() => import('./ui/tabs/Religion.jsx'));
 const Settings = lazy(() => import('./ui/tabs/Settings.jsx'));
 
 // The engine's game object is a single MUTABLE state object (by design). We hold
@@ -123,6 +124,7 @@ export default function App() {
         {tab === 'law' && <Law {...tabProps} />}
         {tab === 'business' && <Business {...tabProps} />}
         {tab === 'travel' && <Travel {...tabProps} />}
+        {tab === 'religion' && <Religion {...tabProps} />}
         {tab === 'world' && <World />}
         {tab === 'settings' && <Settings saveTools={saveTools} onNotice={setNotice} />}
         </Suspense>

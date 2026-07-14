@@ -260,40 +260,60 @@ deduction; succession history; and the absence of charitable will options before
 
 ## Phase 10.4 — Religion, Belief, Charity, and Religious Legacy
 
-**Status: planned.** Add a Religion tab. Keep public religious identity, private belief, observance,
-sect/denomination, and community standing separate rather than treating piety as a moral judgment.
-Model annual obligations and observance choices appropriate to the one-year turn: worship, fasting,
-study, ceremonies, pilgrimage, dietary practice, and community participation are yearly commitments
-or outcomes rather than daily actions.
+### Phase 10.4.1 — Shared Religion Foundation
 
-Support private or open apostasy, conversion, interfaith households, family/community reactions,
-and country-dependent legal or social consequences. Limit sects to major locally relevant branches.
-Add tradition-specific religious careers and qualifications, including priests/pastors, Catholic
-priests, imams, rabbis, chaplains, teachers/scholars, and monastic vocations where applicable.
+**Status: complete.** Added a dedicated Religion tab with Overview, Observance, Beliefs, Charity,
+Conduct & Reconciliation, Community & Family, Career, and Legacy mini-tabs. Public identity, private
+belief and identity, personal piety, outward observance, sect/denomination, Islamic fiqh school,
+community membership, and community standing are stored separately.
 
-Add annual religious and secular giving: zakat, sadaqah, Christian almsgiving/tithing, tzedakah,
-dana, sewa, ordinary charity, charitable bequests, and eligible religious/community endowments.
-Players choose an amount and purpose such as poverty relief, healthcare, education, disaster relief,
-refugees, religious institutions, or community projects. Giving is itemized in finances and may
-affect observance, happiness, community reputation, tax treatment, and measurable charitable impact;
-it never guarantees repayment or an objectively declared afterlife reward.
+Observance uses persistent standing instructions: once worship, fasting, study, dietary practice,
+community participation, or regular reconciliation is enabled, it remains enabled and processes
+automatically each year until changed. The annual history records completion or a genuine obstacle;
+it never forces the player to check the same box every year. A generic lifetime-pilgrimage framework
+records a successful pilgrimage permanently and never repeats its cost.
 
-End-of-life summaries describe charitable and religious legacy from the viewpoint of the
-character's tradition. Outcomes may include respected community member, scholar/teacher, elder,
-philanthropist, or founder of a continuing institution/endowment. Traditions that formally recognize
-saints may support an exceptionally rare posthumous, multi-generational investigation and recognition
-path based on a lifetime of service and later evidence—not donations alone. Other traditions receive
-their own appropriate legacy outcomes, and heirs may encounter later events about an ancestor.
+Private belief may differ from public identity. Characters may privately become unaffiliated or
+follow another belief, publicly convert, or publicly leave after their guardian-led upbringing ends.
+Civil relationship status and religious recognition are separate, and children retain an explicit
+religious-upbringing record. Tradition-specific interfaith rules remain deferred to the matching
+religion expansion instead of applying one universal rule.
 
-Add Aliyah as a reviewed immigration route tied to modeled eligibility, identity/conversion
-recognition, documentation, and application review; conversion never produces automatic approval.
-All apostasy, conversion, clergy, charity, tax, and immigration profiles require a source and legal-
-data audit before implementation.
+Recurring fixed or income-percentage charity remains active until disabled, supports personal or
+household funding and a chosen purpose, records successes or unaffordability, and appears in the
+annual financial statement. Conduct has a lifelong history and may be addressed through private
+repentance, apology/restitution, or a formal religious practice without erasing the original event.
+The system does not declare divine forgiveness; later traditions determine their own reconciliation
+rules. Religious-career interest and preparation are stored without pretending generic clergy roles
+are interchangeable. Death and live Legacy views summarize practice, charity, pilgrimage, study,
+and reconciliation without declaring an afterlife outcome.
 
-**Verify:** private belief and public identity can diverge; conversions and religious careers take
-annual time and qualifications; consequences vary by country; charitable payments reconcile in the
-financial statement; wills/endowments survive death; and legacy events remain rare,
-tradition-specific, non-blocking, and compatible with heir continuation.
+**Verified:** persistent commitments, private/public divergence, recurring charity accounting,
+single-completion pilgrimage, interfaith civil/religious separation, conduct reconciliation,
+religious legacy, and preservation through family succession are covered by Phase 10.4.1 tests.
+
+### Phase 10.4.2 — Christianity
+
+**Status: planned.** Add Catholic, Orthodox, Protestant, and locally important Christian practice,
+obligations, sacraments, confession/reconciliation, charity, clergy qualifications, marriage rules,
+and rare tradition-appropriate posthumous recognition.
+
+### Phase 10.4.3 — Islam
+
+**Status: planned.** Add Sunni, Shia, Ibadi, and locally important schools; prayer, Ramadan, Hajj,
+zakat, sadaqah, repentance, religious marriage recognition, family rules, and qualified religious
+careers. Country law and community consequences require a sourced profile rather than a global rule.
+
+### Phase 10.4.4–10.4.7 — Other Traditions and Nonreligion
+
+**Status: planned.** Add Judaism (including a reviewed Aliyah route), Hinduism, Buddhism, Sikhism,
+locally relevant traditional or folk religions, smaller nationally relevant traditions, atheism,
+agnosticism, unaffiliated lives, secular charity, and mixed-belief households in focused batches.
+
+### Phase 10.4.8 — Religion Integration and Balance
+
+**Status: planned.** Complete the sourced country-law, clergy, charity-tax, immigration, accessibility,
+sensitivity, balance, inheritance, charitable-will, endowment, and multi-generation legacy review.
 
 ## Phase 10.5 — Personal and Family Presentation
 

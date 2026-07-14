@@ -18,7 +18,10 @@ export const ACTIVITIES = [
     effect: (ch) => { addCivicYear(ch); addStat(ch, 'charisma', 1); } },
   { id: 'religion', label: 'Religious practice', desc: '+Happiness, +Charisma',
     effect: (ch) => { addStat(ch, 'happiness', 2); addStat(ch, 'charisma', 1); },
-    available: (ch) => ch.religion && ch.religion !== 'None' },
+    available: (ch) => {
+      const identity=ch.religionState?.privateIdentity||ch.religion;
+      return identity && !/^(none|unaffiliated|atheist|agnostic)$/i.test(identity);
+    } },
   { id: 'sidehustle', label: 'Side hustle', desc: '+Income, +Informal work experience',
     effect: (ch, ctx) => { ensureExperience(ch).sectors.informal+=1;ctx.sideIncome += medianWage(ctx.country) * (0.05 + ctx.rng.next() * 0.10); },
     available: (ch) => ch.age >= 14 },

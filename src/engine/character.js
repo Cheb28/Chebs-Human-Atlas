@@ -11,6 +11,7 @@ import { assignBirthHouseholdNames } from './names.js';
 import { initializeFamilyEconomy } from './household.js';
 import { ensureFinancialState } from './financialSystems.js';
 import { initExperience } from './experience.js';
+import { initReligionState } from './religion.js';
 
 export const WEALTH_CLASSES = ['Destitute', 'Poor', 'Middle', 'Affluent', 'Rich'];
 const PERSONALITY_TRAITS = ['ambitious','caring','independent','social','cautious','creative','resilient','curious'];
@@ -56,7 +57,7 @@ function rollLocation(rng, country, forcedName) {
 // A generated person (parent/sibling/spouse/child) — light record.
 function makePerson(rng, country, { relation, sex, ageOffset = 0, wealthClass }) {
   const chosenSex = sex || (rng.chance(0.5) ? 'male' : 'female');
-  return {
+  const person = {
     id: `${relation.toLowerCase()}-${Math.abs(ageOffset)}-${rng.int(1, 999999)}`,
     relation,
     sex: chosenSex,
@@ -70,6 +71,8 @@ function makePerson(rng, country, { relation, sex, ageOffset = 0, wealthClass })
     residenceCountryId: country.id,
     citizenships: [country.id],
   };
+  person.religionState = initReligionState(person);
+  return person;
 }
 
 // options may also include secondNationalityCountryId + foreignParentRelation.
@@ -163,6 +166,7 @@ export function createCharacter(rng, options = {}) {
     lastStatement: null,
     family: [],
   };
+  character.religionState = initReligionState(character);
 
   // clamp stats
   for (const k of Object.keys(character.stats)) {
@@ -188,6 +192,7 @@ export function createCharacter(rng, options = {}) {
     parent.countryId = foreign.id;
     parent.ethnicity = rollDistribution(rng, foreign.ethnicGroups, 'Local');
     parent.religion = rollDistribution(rng, foreign.religions, 'None');
+    parent.religionState = initReligionState(parent);
     if (childInherits) character.immigration.citizenships.push(foreign.id);
     character.immigration.citizenships = [...new Set(character.immigration.citizenships)];
   };

@@ -13,6 +13,7 @@ export const TABS = [
   { id: 'health', label: 'Health', phase: 3 },
   { id: 'business', label: 'Business', phase: 5 },
   { id: 'travel', label: 'Travel', phase: 6 },
+  { id: 'religion', label: 'Religion', phase: 10 },
   { id: 'law', label: 'Law', phase: 4 },
   { id: 'events', label: 'Events', phase: 3 },
   { id: 'world', label: 'World', phase: 1 },

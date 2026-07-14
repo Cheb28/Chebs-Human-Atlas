@@ -380,11 +380,14 @@ War events raise mortality, crash the local economy (−30% wages), unlock the a
 
 **Top tab bar** (persistent), one window per tab — organized, no mega-screen (user requirement #16):
 
-`Overview | Activities | Finances | Career | Education | Family | Health | Business | Travel | Law | Events | World | Settings`
+`Overview | Country | Activities | Finances | Career | Education | Family | Health | Business | Travel | Religion | Law | Events | World | Settings`
 
 - **Persistent header:** name, age, location flag+city, cash, Health/Happiness mini-bars, **Advance Year** button (always visible), Events badge.
 - **Overview:** stat bars, current situation summary, this-year log digest, net-worth sparkline.
 - **World:** browse any country's profile (its stats, systems, tiers) — doubles as the emigration research screen.
+- **Religion:** mini-tabs separate public identity, private belief, persistent observance commitments,
+  charity, conduct/reconciliation, community and interfaith family life, vocational preparation, and
+  end-of-life legacy. Routine yearly choices remain active until the player changes them.
 - Design language: clean, data-dense control-room panels (dark theme default). No modal popups except death.
 - **Save system:** Settings contains rolling autosave controls (Off/every 1, 5, or 10 years), named manual save slots, exact RNG restoration, and validated JSON export/import. Saved lives remain accessible from character creation.
 

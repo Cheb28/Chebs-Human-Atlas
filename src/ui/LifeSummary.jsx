@@ -2,12 +2,14 @@ import { COUNTRY_BY_ID } from '../engine/countries.js';
 import { money, titleCase } from './format.js';
 import { personAge } from '../engine/family.js';
 import { displayName } from '../engine/names.js';
+import { religiousLegacy } from '../engine/religion.js';
 
 // Shown at death (GAME_DESIGN section 1). Heir continuation arrives in Phase 4.
 export default function LifeSummary({ state, onRestart, onContinueSuccessor }) {
   const ch = state.character;
   const country = COUNTRY_BY_ID[ch.countryId];
   const allLines = state.log.flatMap(e => e.lines.map(l => ({ age: e.age, l })));
+  const faithLegacy = religiousLegacy(ch);
 
   return (
     <div className="centered">
@@ -59,6 +61,17 @@ export default function LifeSummary({ state, onRestart, onContinueSuccessor }) {
           <h3>Migration History</h3>
           {ch.immigration.history.map((m,i)=><div className="kv" key={i}><span className="k">Age {m.age}</span><span className="v">{m.route === 'naturalization' ? `Naturalized in ${COUNTRY_BY_ID[m.toId]?.name}` : `${COUNTRY_BY_ID[m.fromId]?.name || '—'} → ${COUNTRY_BY_ID[m.toId]?.name || '—'} (${titleCase(m.route)})`}</span></div>)}
         </div>}
+
+        <div className="panel" style={{ marginBottom: 18 }}>
+          <h3>Religious and Charitable Legacy</h3>
+          <div className="kv"><span className="k">Public religious identity</span><span className="v">{faithLegacy.publicIdentity}</span></div>
+          <div className="kv"><span className="k">Private religious identity</span><span className="v">{faithLegacy.privateIdentity}</span></div>
+          <div className="kv"><span className="k">Observed practice</span><span className="v">{faithLegacy.observance}</span></div>
+          <div className="kv"><span className="k">Personal piety</span><span className="v">{faithLegacy.piety}</span></div>
+          <div className="kv"><span className="k">Lifetime charity</span><span className="v">{money(faithLegacy.lifetimeGiven)}</span></div>
+          <p>{faithLegacy.summary}</p>
+          <p className="muted">This summary describes recorded actions and community memory; it does not declare an afterlife outcome.</p>
+        </div>
 
         <div className="panel" style={{ marginBottom: 18 }}>
           <h3>Family Tree</h3>

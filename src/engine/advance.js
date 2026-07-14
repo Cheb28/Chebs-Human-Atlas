@@ -27,6 +27,7 @@ import { ensureHousing, resolveHousingYear } from './housing.js';
 import { resolveLanguageDevelopment } from './language.js';
 import { bankProfile, budgetRates, ensureFinancialState, resolveFinancialYear, taxProfile } from './financialSystems.js';
 import { inheritanceRules } from './inheritance.js';
+import { ensureReligionState, recordConduct, resolveReligionYear } from './religion.js';
 
 function clamp(v, lo = 1, hi = 100) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -342,6 +343,7 @@ export function advanceYear(state) {
   ensureJudicial(ch);
   ensureBenefits(ch);
   ensureHousing(ch);
+  ensureReligionState(ch);
   const rng = state.rng;
   let country = COUNTRY_BY_ID[ch.countryId];
   const log = [];
@@ -479,12 +481,18 @@ export function advanceYear(state) {
 
   // Medical expenses (insurance premium + treatment costs) go into the statement.
   const extraExpenses = [];
+  const religion = resolveReligionYear(ch, country, rng, { earnedIncome });
+  for (const line of religion.logs) { log.push(line); pushEvent(ch, 'personal', line); }
+  extraExpenses.push(...religion.expenses);
   extraExpenses.push(...annualFinance.expenses);
   extraExpenses.push(...family.expenses);
   if (hctx.insuranceLine) extraExpenses.push(hctx.insuranceLine);
   if (health.medicalCosts > 0) extraExpenses.push({ label: 'Medical costs', amount: health.medicalCosts, household: ch.age < 18 || ch.employmentStatus === 'student' });
 
   const fin = resolveFinances(ch, country, rng, incomeLines, log, extraExpenses);
+  if ((ch.financial?.tax?.compliance || 'honest') === 'underreport' && fin.statement.tax.evaded > 0) {
+    recordConduct(ch, 'dishonesty', 'Deliberately underreported taxable income.', 'tax filing');
+  }
   if ((ch.job && ch.job.sector !== 'informal') || ch.military.status === 'career') ch.benefits.contributionYears += 1;
   ctx.poverty = fin.poverty;
 

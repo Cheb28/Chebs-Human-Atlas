@@ -13,11 +13,21 @@ import { clearPlannedCrime, planCrime } from './judicial.js';
 import { applyForSocialHousing, chooseHousing, homePrice, setChildContributionPolicy } from './housing.js';
 import { marriageNameChoices, requestLegalNameChange, setChildName } from './names.js';
 import { bankProfile, drawCredit, openCreditCard, recordInvestmentSale, repayConsumerDebt, requestBudgetChange, sendRemittance, setFinancialGoal, setTaxCompliance, setTaxFilingChoice, takePersonalLoan, transferBetweenAccounts } from './financialSystems.js';
+import { changePublicReligion, planLifetimePilgrimage, reconcileConduct, setPrivateBelief, setReligionCommitment, setReligiousBranch, setReligiousCareer, setReligiousCommunity, updateCharityPlan } from './religion.js';
 
 export function setActivities(state, ids) { state.character.selectedActivities = ids; }
 export function setLifestyle(state, ls) { state.character.lifestyle = ls; }
 export function setPrivateSchool(state, enabled) { state.character.education.private = enabled; }
 export function setResistDropout(state, enabled) { state.character.education.resistDropout = enabled; }
+export function updateReligionCommitment(state, id, enabled) { return setReligionCommitment(state.character, id, enabled); }
+export function updateReligiousCharity(state, patch) { return updateCharityPlan(state.character, patch); }
+export function updatePrivateBelief(state, belief, identity) { return setPrivateBelief(state.character, belief, identity); }
+export function convertOrLeaveReligion(state, target) { return changePublicReligion(state.character, target); }
+export function updateReligiousBranch(state, branch, fiqh) { return setReligiousBranch(state.character, branch, fiqh); }
+export function updateReligiousCommunity(state, member) { return setReligiousCommunity(state.character, member); }
+export function requestLifetimePilgrimage(state) { return planLifetimePilgrimage(state.character); }
+export function updateReligiousCareer(state, interested, path) { return setReligiousCareer(state.character, interested, path); }
+export function addressConduct(state, id, method) { return reconcileConduct(state.character, id, method); }
 
 export function setDraftChoice(state, choice) {
   const draft = state.character.pendingDecisions?.find(d => d.type === 'draft' || d.type === 'mobilization');
