@@ -5,6 +5,9 @@ export default defineConfig({
   base: '/Chebs-Human-Atlas/',
   plugins: [react()],
   build: {
+    // MapLibre is intentionally isolated behind the lazy-loaded Country screen.
+    // Keep warnings useful for unexpected growth while allowing that known chunk.
+    chunkSizeWarningLimit: 1100,
     rollupOptions: {
       output: {
         manualChunks(id) {
